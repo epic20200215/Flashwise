@@ -24,6 +24,7 @@ const defaultState = {
   selectedOption: '',
   showResult: false,
   lastCorrect: null,
+  editingCardId: '',
   minorMode: false,
   cards: generateCardsFromText(seedText, '闪学示例卡组'),
   groups: [
@@ -197,6 +198,10 @@ function renderImport() {
         state.importText
       )}</textarea>
       <div class="import-actions">
+        <label class="file-button">
+          读取文本文件
+          <input id="fileInput" type="file" accept=".txt,.md,.csv,text/plain,text/markdown" />
+        </label>
         <button class="primary" data-action="generate">生成闪卡</button>
         <button class="secondary" data-action="sample">填入示例</button>
       </div>
@@ -234,6 +239,53 @@ function renderStudy() {
         ${state.showResult ? renderResult(card) : ''}
       </article>
     </section>
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">卡片管理</p>
+          <h2>可编辑、可删除、可导出</h2>
+        </div>
+      </div>
+      <div class="card-list">${state.cards.slice(0, 8).map(renderManagedCard).join('')}</div>
+    </section>
+    ${renderEditor()}
+  `;
+}
+
+function renderManagedCard(card) {
+  return `
+    <article class="study-card managed-card">
+      <div class="tag-row">${card.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
+      <h3>${card.question}</h3>
+      <p>答案：${card.answer}</p>
+      <div class="mini-actions">
+        <button class="ghost" data-edit="${card.id}">编辑</button>
+        <button class="ghost danger" data-delete="${card.id}">删除</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderEditor() {
+  const card = state.cards.find((item) => item.id === state.editingCardId);
+  if (!card) return '';
+  return `
+    <div class="editor-backdrop">
+      <section class="panel editor">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">编辑卡片</p>
+            <h2>保留来源，修正表达</h2>
+          </div>
+          <button class="ghost" data-action="close-editor">关闭</button>
+        </div>
+        <label>题干<textarea id="editQuestion" rows="3">${escapeHtml(card.question)}</textarea></label>
+        <label>答案<input id="editAnswer" class="answer-input" value="${escapeAttr(card.answer)}" /></label>
+        <label>解释<textarea id="editExplanation" rows="4">${escapeHtml(card.explanation)}</textarea></label>
+        <label>来源<textarea id="editSource" rows="4">${escapeHtml(card.source)}</textarea></label>
+        <button class="primary full" data-action="save-card">保存卡片</button>
+      </section>
+    </div>
   `;
 }
 
@@ -360,6 +412,14 @@ function bindEvents() {
   if (importText) importText.addEventListener('input', (event) => (state.importText = event.target.value));
   const answerInput = document.querySelector('#answerInput');
   if (answerInput) answerInput.addEventListener('input', (event) => (state.answerDraft = event.target.value));
+  const fileInput = document.querySelector('#fileInput');
+  if (fileInput) fileInput.addEventListener('change', handleFileImport);
+  document.querySelectorAll('[data-edit]').forEach((button) => {
+    button.addEventListener('click', () => setState({ editingCardId: button.dataset.edit }));
+  });
+  document.querySelectorAll('[data-delete]').forEach((button) => {
+    button.addEventListener('click', () => deleteCard(button.dataset.delete));
+  });
   document.querySelectorAll('[data-action]').forEach((button) => {
     button.addEventListener('click', () => handleAction(button.dataset.action));
   });
@@ -384,6 +444,8 @@ function handleAction(action) {
     setState({ showResult: true, lastCorrect: gradeAnswer(state.answerDraft, card.answer) });
   }
   if (action === 'reveal') setState({ showResult: true, lastCorrect: true });
+  if (action === 'close-editor') setState({ editingCardId: '' });
+  if (action === 'save-card') saveEditedCard();
   if (action === 'minor') setState({ minorMode: !state.minorMode });
   if (action === 'reset' && confirm('确定清空本地学习数据？')) {
     localStorage.removeItem(storageKey);
@@ -392,6 +454,35 @@ function handleAction(action) {
     render();
   }
   if (action === 'export') downloadCsv();
+}
+
+function handleFileImport(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    setState({ importText: String(reader.result || ''), tab: 'import' });
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function saveEditedCard() {
+  const id = state.editingCardId;
+  const patch = {
+    question: document.querySelector('#editQuestion')?.value || '',
+    answer: document.querySelector('#editAnswer')?.value || '',
+    explanation: document.querySelector('#editExplanation')?.value || '',
+    source: document.querySelector('#editSource')?.value || ''
+  };
+  setState({
+    cards: state.cards.map((card) => (card.id === id ? { ...card, ...patch } : card)),
+    editingCardId: ''
+  });
+}
+
+function deleteCard(id) {
+  if (!confirm('确定删除这张卡片？')) return;
+  setState({ cards: state.cards.filter((card) => card.id !== id), quizIndex: 0, showResult: false });
 }
 
 function currentCard() {
