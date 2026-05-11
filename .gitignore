@@ -6,3 +6,5 @@ dist/
 Thumbs.db
 *.tmp
 *.local
+docs/research/*.jpg
+docs/research/*.mp4

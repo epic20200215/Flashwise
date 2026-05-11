@@ -16,6 +16,7 @@
 - [docs/qa-and-launch.md](docs/qa-and-launch.md)：测试、灰度、上线与运营指标。
 - [docs/android-packaging.md](docs/android-packaging.md)：Android 打包路线和 OCKI 可参考文件说明。
 - [docs/completion-audit.md](docs/completion-audit.md)：当前交付完成审计。
+- [docs/mobile-redesign-audit.md](docs/mobile-redesign-audit.md)：对照 Gizmo 截图后的手机竖版改版审计。
 
 ## 当前可运行版本
 
@@ -23,6 +24,7 @@
 
 - 今日复习与掌握率。
 - 粘贴资料后模拟 AI 生成带来源片段的闪卡。
+- 手机竖版 App 信息架构：Home / Progress / Add / Decks / Profile。
 - 选择题、填空题、翻卡练习。
 - FSRS 风格复习调度。
 - 学习小组、头像、排行榜和共享卡组。

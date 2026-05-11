@@ -9,16 +9,37 @@ import {
   seedText
 } from './core.js';
 
-const storageKey = 'flashwise-state-v1';
+const storageKey = 'flashwise-state-v2';
+const ipImage = './images/ip_ocki.png';
 const avatarFemale = './images/profilepicture-female.png';
 const avatarMale = './images/profilepicture-male.png';
-const ipImage = './images/ip_ocki.png';
+
+const publicDecks = [
+  ['考研英语 高频词根', 86, '考研', '英语', '+3', '#7c83ff'],
+  ['中国近现代史纲要', 72, '考研', '政治', '+2', '#97eb2f'],
+  ['教资 科目二教育心理', 54, '教资', '教育学', '+2', '#ff9a3d'],
+  ['公考常识 判断推理', 128, '公考', '行测', '+4', '#ff5b73'],
+  ['大学英语四级核心短语', 93, 'CET4', '英语', '+1', '#32c9f4'],
+  ['法考 民法基础概念', 64, '法考', '民法', '+2', '#21d6b5'],
+  ['高中生物 细胞代谢', 110, '高中', '生物', '+2', '#f971c8']
+];
+
+const leaderboard = [
+  ['alicia', '155k XP', avatarFemale, '🥇'],
+  ['Scarlett', '55k XP', avatarMale, '🥈'],
+  ['Sophia wu', '9.8k XP', avatarFemale, '🥉'],
+  ['Isa Chen', '1.5k XP', avatarMale, '4'],
+  ['Alex Chiu', '815 XP', avatarFemale, '5'],
+  ['Rachel Park', '450 XP', avatarMale, '6'],
+  ['Neela S', '400 XP', avatarFemale, '7'],
+  ['evan g', '355 XP', avatarMale, '8']
+];
 
 const defaultState = {
-  tab: 'today',
+  tab: 'home',
+  deckTab: 'my',
   mode: 'choice',
   importText: seedText,
-  selectedDeck: 'deck_ai',
   quizIndex: 0,
   answerDraft: '',
   selectedOption: '',
@@ -26,19 +47,10 @@ const defaultState = {
   lastCorrect: null,
   editingCardId: '',
   minorMode: false,
-  cards: generateCardsFromText(seedText, '闪学示例卡组'),
-  groups: [
-    {
-      id: 'group_1',
-      name: '考前 10 分钟小组',
-      challenge: '今晚每人完成 12 张到期卡',
-      members: [
-        { name: '林同学', xp: 1280, avatar: avatarFemale },
-        { name: '周同学', xp: 1185, avatar: avatarMale },
-        { name: '我', xp: 1360, avatar: ipImage }
-      ]
-    }
-  ]
+  xp: 150,
+  level: 3,
+  streak: 1,
+  cards: generateCardsFromText(seedText, '中国近现代史纲要')
 };
 
 let state = loadState();
@@ -47,7 +59,7 @@ function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
     if (!saved || !Array.isArray(saved.cards)) return defaultState;
-    return { ...defaultState, ...saved, importText: saved.importText || seedText };
+    return { ...defaultState, ...saved };
   } catch {
     return defaultState;
   }
@@ -64,204 +76,436 @@ function setState(patch) {
 }
 
 function render() {
-  const app = document.querySelector('#app');
-  app.innerHTML = `
-    <main class="shell">
-      ${renderHeader()}
-      ${renderTabs()}
-      <section class="screen">${renderScreen()}</section>
-      ${renderMobileNav()}
+  document.querySelector('#app').innerHTML = `
+    <main class="app-shell">
+      ${renderScreen()}
+      ${renderBottomNav()}
     </main>
   `;
   bindEvents();
 }
 
-function renderHeader() {
-  const due = dueCards(state.cards).length;
-  return `
-    <header class="topbar">
-      <div class="brand">
-        <img src="./images/icon.png" alt="闪学图标" />
-        <div>
-          <strong>闪学</strong>
-          <span>Flashwise</span>
-        </div>
-      </div>
-      <div class="top-actions">
-        <button class="ghost" data-action="export">导出</button>
-        <button class="pill" data-tab="import">导入资料</button>
-      </div>
-      <div class="due-badge">${due} 到期</div>
-    </header>
-  `;
+function renderScreen() {
+  if (state.tab === 'progress') return renderProgress();
+  if (state.tab === 'add') return renderAdd();
+  if (state.tab === 'decks') return renderDecks();
+  if (state.tab === 'profile') return renderProfile();
+  if (state.tab === 'quiz') return renderQuiz();
+  return renderHome();
 }
 
-function renderTabs() {
+function renderBottomNav() {
   const tabs = [
-    ['today', '今日'],
-    ['import', '导入'],
-    ['study', '练习'],
-    ['group', '小组'],
-    ['profile', '我的']
+    ['home', '🏠', 'Home'],
+    ['progress', '🔥', 'Progress'],
+    ['add', '✚', 'Add'],
+    ['decks', '📁', 'Decks'],
+    ['profile', '🐙', 'Profile']
   ];
   return `
-    <nav class="tabs" aria-label="主导航">
+    <nav class="bottom-nav" aria-label="主导航">
       ${tabs
         .map(
-          ([key, label]) =>
-            `<button class="${state.tab === key ? 'active' : ''}" data-tab="${key}">${label}</button>`
+          ([key, icon, label]) => `
+            <button class="${state.tab === key ? 'active' : ''} ${key === 'add' ? 'add-tab' : ''}" data-tab="${key}">
+              <span>${icon}</span>
+              <small>${label}</small>
+            </button>
+          `
         )
         .join('')}
     </nav>
   `;
 }
 
-function renderMobileNav() {
-  return renderTabs().replace('class="tabs"', 'class="bottom-tabs"');
-}
-
-function renderScreen() {
-  if (state.tab === 'import') return renderImport();
-  if (state.tab === 'study') return renderStudy();
-  if (state.tab === 'group') return renderGroup();
-  if (state.tab === 'profile') return renderProfile();
-  return renderToday();
-}
-
-function renderToday() {
+function renderHome() {
   const due = dueCards(state.cards);
-  const mastered = mastery(state.cards);
+  const cardsByDeck = deckGroups();
   return `
-    <div class="hero-grid">
-      <section class="panel hero-panel">
-        <div class="hero-copy">
-          <p class="eyebrow">今天的学习任务</p>
-          <h1>上传资料，马上开考。</h1>
-          <p>闪学会把资料拆成可追溯卡片，用 FSRS 风格调度和考试日期权重帮你复习。</p>
-          <div class="hero-actions">
-            <button class="primary" data-tab="study">开始 ${Math.max(due.length, 1)} 张复习</button>
-            <button class="secondary" data-tab="import">生成新卡组</button>
-          </div>
-        </div>
-        <img class="mascot" src="${ipImage}" alt="闪学 IP 形象" />
-      </section>
-      <aside class="panel stats-panel">
-        ${stat('掌握率', `${mastered}%`, '来源可追溯')}
-        ${stat('到期卡片', `${due.length}`, '优先复习')}
-        ${stat('连续学习', '7 天', state.minorMode ? '未成年人保护中' : '成人模式')}
-      </aside>
-    </div>
-    <section class="panel">
-      <div class="section-head">
+    <section class="screen home-screen">
+      ${statusBar('8:27')}
+      <button class="subject-chip">⏱️ 中国史</button>
+      <img class="home-mascot" src="${ipImage}" alt="闪学 IP" />
+      <h1 class="home-title">今天学什么？</h1>
+      <section class="study-prompt" data-tab="add">
         <div>
-          <p class="eyebrow">复习队列</p>
-          <h2>先处理快遗忘的卡片</h2>
+          <span>我想学习...</span>
+          <strong>${state.importText ? shortText(state.importText, 18) : '上传课件、笔记或错题'}</strong>
         </div>
-        <button class="ghost" data-tab="study">查看全部</button>
+        <b>＋</b>
+      </section>
+      <div class="upload-grid">
+        ${uploadButton('📁', '卡组', 'decks')}
+        ${uploadButton('⬆️', '上传', 'add')}
+        ${uploadButton('📷', '拍照', 'add')}
+        ${uploadButton('📋', '粘贴', 'add')}
+        ${uploadButton('🎬', '视频', 'add')}
+        ${uploadButton('⌄', '更多', 'add')}
       </div>
-      <div class="card-list">
-        ${(due.length ? due : state.cards.slice(0, 4)).map(renderCardPreview).join('')}
-      </div>
+      <section class="section-block">
+        <h2>继续学习</h2>
+        <article class="jump-card" data-tab="quiz">
+          <div class="progress-ring">${mastery(state.cards)}%</div>
+          <div>
+            <strong>${cardsByDeck[0]?.title || '智能导入卡组'}</strong>
+            <span>${due.length || state.cards.length} questions ready</span>
+          </div>
+        </article>
+      </section>
+      <section class="section-block">
+        <div class="section-row">
+          <h2>同校热门卡组</h2>
+          <button data-tab="decks">查看</button>
+        </div>
+        <div class="deck-carousel">${publicDecks.slice(0, 3).map(renderDeckMini).join('')}</div>
+      </section>
+      <section class="section-block">
+        <div class="section-row">
+          <h2>我的卡组</h2>
+          <button data-tab="add">＋</button>
+        </div>
+        ${cardsByDeck.map(renderDeckRow).join('')}
+      </section>
     </section>
   `;
 }
 
-function stat(label, value, note) {
-  return `<div class="stat"><span>${label}</span><strong>${value}</strong><small>${note}</small></div>`;
+function statusBar(time) {
+  return `
+    <div class="status-bar">
+      <span>${time}</span>
+      <span>HD ▮▮▮  WiFi  87% ●</span>
+    </div>
+  `;
 }
 
-function renderCardPreview(card) {
+function uploadButton(icon, label, tab) {
   return `
-    <article class="study-card">
-      <div class="tag-row">${card.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
-      <h3>${card.question}</h3>
-      <p>${card.source}</p>
-      <div class="card-meta">
-        <span>稳定度 ${card.stability}</span>
-        <span>难度 ${card.difficulty}</span>
-      </div>
+    <button class="upload-pill" data-tab="${tab}">
+      <span>${icon}</span>
+      <strong>${label}</strong>
+    </button>
+  `;
+}
+
+function renderDeckMini(deck) {
+  const [title, count, level, subject, extra, color] = deck;
+  return `
+    <article class="deck-mini">
+      <i style="background:${color}"></i>
+      <strong>${title}</strong>
+      <span>${count} cards</span>
+      <div><small>${level}</small><small>${subject}</small><small>${extra}</small></div>
     </article>
   `;
 }
 
-function renderImport() {
+function renderDeckRow(deck) {
   return `
-    <section class="panel import-panel">
-      <div class="section-head">
+    <article class="deck-row" data-tab="quiz">
+      <i style="background:${deck.color}"></i>
+      <div>
+        <strong>${deck.title}</strong>
+        <span>${deck.count} cards</span>
+      </div>
+      <b>⋮</b>
+    </article>
+  `;
+}
+
+function renderProgress() {
+  return `
+    <section class="screen progress-screen">
+      ${statusBar('8:28')}
+      <header class="level-card">
+        <img src="${ipImage}" alt="闪学 IP" />
         <div>
-          <p class="eyebrow">智能导入</p>
-          <h2>粘贴笔记，生成带来源的闪卡</h2>
+          <strong>Novice</strong>
+          <span>50 XP</span>
         </div>
-        <span class="safe-label">AI 生成仅供学习参考</span>
-      </div>
-      <textarea id="importText" rows="10" placeholder="粘贴课堂笔记、PDF 文字、错题解析或考试资料...">${escapeHtml(
-        state.importText
-      )}</textarea>
-      <div class="import-actions">
-        <label class="file-button">
-          读取文本文件
-          <input id="fileInput" type="file" accept=".txt,.md,.csv,text/plain,text/markdown" />
-        </label>
-        <button class="primary" data-action="generate">生成闪卡</button>
-        <button class="secondary" data-action="sample">填入示例</button>
-      </div>
-    </section>
-    <section class="panel">
-      <h2>最近生成</h2>
-      <div class="card-list">${state.cards.slice(0, 6).map(renderCardPreview).join('')}</div>
+        <b>Level ${state.level}: ${state.xp} XP</b>
+      </header>
+      <section class="section-block">
+        <h2>Start your streak!</h2>
+        <article class="streak-card">
+          <div>🔥</div>
+          <strong>2 questions</strong>
+          <span>to start your streak</span>
+        </article>
+        <div class="calendar-row">${['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => `<b>${day}</b>`).join('')}</div>
+        <div class="calendar-grid">${Array.from({ length: 14 }, (_, index) => `<span class="${index === 8 ? 'today' : ''}">${index + 3}</span>`).join('')}</div>
+        <button class="dark-cta" data-tab="quiz">🎮 Start streak</button>
+      </section>
+      <section class="section-block">
+        <h2>Jump back in</h2>
+        <article class="jump-card" data-tab="quiz">
+          <div class="progress-ring">${mastery(state.cards)}%</div>
+          <div><strong>${deckGroups()[0]?.title || '我的卡组'}</strong><span>Quiz</span></div>
+        </article>
+      </section>
+      <section class="section-block">
+        <h2>Deck progress</h2>
+        <article class="jump-card">
+          <div class="progress-ring">${mastery(state.cards)}%</div>
+          <div><strong>${deckGroups()[0]?.title || '我的卡组'}</strong><span>${masteryCount()} of ${state.cards.length} cards mastered</span></div>
+        </article>
+      </section>
+      <section class="section-block">
+        <h2>Your friends leaderboard</h2>
+        <div class="leader-tabs"><button>Day</button><button>Week</button><button>Month</button><button class="active">All Time</button></div>
+        <div class="leaderboard">${leaderboard.map(renderLeader).join('')}</div>
+        <button class="dark-cta">👥 Find friends</button>
+      </section>
+      <section class="section-block">
+        <div class="section-row"><h2>Your study groups</h2><button>＋</button></div>
+        <article class="group-card">
+          <div class="faces"><span>🐬</span><span>🧠</span><span>🐸</span><span>💀</span></div>
+          <strong>Study with friends</strong>
+          <span>Learn and study together</span>
+          <button class="dark-cta">Create group</button>
+        </article>
+      </section>
+      <section class="section-block">
+        <h2>Following</h2>
+        ${renderFeed('tianxuo chen', 'Level 2!', '💎', '10 days ago')}
+        ${renderFeed('alicia', '2 day streak!', '🔥', '58 days ago', 'emerald')}
+        ${renderFeed('Isa Chen', '1 day streak!', '🔥', '81 days ago', 'gold')}
+      </section>
     </section>
   `;
 }
 
-function renderStudy() {
+function renderLeader(item, index) {
+  const [name, xp, avatar, rank] = item;
+  return `
+    <div class="leader-row">
+      <b>${rank || index + 1}</b>
+      <img src="${avatar}" alt="${name}" />
+      <strong>${name}</strong>
+      <span>${xp}</span>
+    </div>
+  `;
+}
+
+function renderFeed(name, text, icon, time, variant = '') {
+  return `
+    <article class="feed-card">
+      <header><img src="${avatarFemale}" alt="${name}" /><div><strong>${name}</strong><span>${time}</span></div></header>
+      <div class="feed-badge ${variant}"><strong>${text}</strong><b>${icon}</b></div>
+      <footer><button>♡ 1</button><button>☺︎</button></footer>
+    </article>
+  `;
+}
+
+function renderAdd() {
+  return `
+    <section class="screen add-screen">
+      ${statusBar('8:29')}
+      <header class="page-title">
+        <button data-tab="home">‹</button>
+        <h1>Add study material</h1>
+        <span></span>
+      </header>
+      <section class="add-hero">
+        <div class="plus-orb">＋</div>
+        <h2>上传资料，马上开考</h2>
+        <p>像 Gizmo 一样先让你开始学习；闪学会保留来源片段，答错能回到原文。</p>
+      </section>
+      <div class="source-grid">
+        ${sourceTile('📄', '文件上传', 'PDF / Word / TXT', 'file')}
+        ${sourceTile('📷', '拍照识别', '手写笔记 / 错题', 'photo')}
+        ${sourceTile('📋', '粘贴文本', '课堂笔记 / 公众号', 'paste')}
+        ${sourceTile('🎬', '视频链接', 'B 站 / 网课摘要', 'video')}
+      </div>
+      <section class="upload-composer">
+        <label class="file-button">
+          选择文本文件
+          <input id="fileInput" type="file" accept=".txt,.md,.csv,text/plain,text/markdown" />
+        </label>
+        <textarea id="importText" rows="7" placeholder="粘贴要学习的资料...">${escapeHtml(state.importText)}</textarea>
+        <button class="primary-cta" data-action="generate">AI 生成闪卡和测验</button>
+      </section>
+      <section class="pipeline">
+        <h2>生成后你会得到</h2>
+        <div><span>1</span><strong>关键知识点</strong><small>自动拆分章节和概念</small></div>
+        <div><span>2</span><strong>多题型 Quiz</strong><small>选择、填空、翻卡主动回忆</small></div>
+        <div><span>3</span><strong>游戏化复习</strong><small>XP、streak、排行榜、到期复习</small></div>
+      </section>
+    </section>
+  `;
+}
+
+function sourceTile(icon, title, subtitle) {
+  return `
+    <article class="source-tile">
+      <b>${icon}</b>
+      <strong>${title}</strong>
+      <span>${subtitle}</span>
+    </article>
+  `;
+}
+
+function renderDecks() {
+  return `
+    <section class="screen decks-screen">
+      ${statusBar('8:30')}
+      <header class="page-title">
+        <span></span>
+        <h1>Decks</h1>
+        <button>⌕</button>
+      </header>
+      <div class="deck-tabs">
+        <button class="${state.deckTab === 'my' ? 'active' : ''}" data-deck-tab="my">My decks</button>
+        <button class="${state.deckTab === 'public' ? 'active' : ''}" data-deck-tab="public">Public decks</button>
+      </div>
+      ${state.deckTab === 'public' ? renderPublicDecks() : renderMyDecks()}
+      <button class="floating-add" data-tab="add">＋</button>
+    </section>
+  `;
+}
+
+function renderMyDecks() {
+  const groups = deckGroups();
+  return `
+    <div class="deck-list">
+      ${groups.map(renderDeckRow).join('')}
+      <button class="official-search">⌕ Find official course decks</button>
+    </div>
+  `;
+}
+
+function renderPublicDecks() {
+  return `
+    <div class="filter-row"><button>Level⌄</button><button>Subject⌄</button><button>School⌄</button></div>
+    <div class="popular-chip">📈 Popular at “中国大陆学习社区”</div>
+    <div class="deck-list">${publicDecks.map(renderDeckMini).join('')}</div>
+  `;
+}
+
+function renderProfile() {
+  return `
+    <section class="screen profile-screen">
+      ${statusBar('8:31')}
+      <header class="page-title">
+        <button data-tab="home">‹</button>
+        <h1>Edit profile</h1>
+        <span></span>
+      </header>
+      <section class="avatar-edit">
+        <img src="${ipImage}" alt="闪学头像" />
+        <button>✎</button>
+      </section>
+      <section class="settings-card">
+        ${settingRow('👤', 'Name', '闪学用户')}
+        ${settingRow('🇨🇳', 'Country', 'China Mainland')}
+      </section>
+      <section class="settings-card">
+        ${settingRow('🏫', 'School', '未设置')}
+        ${settingRow('📚', 'Exam', '考研 / 四六级 / 公考')}
+        ${settingRow('🧭', 'Year', '2026 备考')}
+      </section>
+      <button class="outline-wide">Remove education</button>
+      <section class="privacy-row">
+        <span>🔒 Private profile</span>
+        <label><input type="checkbox" data-action="minor" ${state.minorMode ? 'checked' : ''} /><i></i></label>
+      </section>
+      <section class="settings-card">
+        ${settingRow('🤖', 'AI 标识', '生成内容仅供学习参考')}
+        ${settingRow('🧹', '本地数据', '可清空、可导出')}
+      </section>
+      <div class="profile-actions">
+        <button class="outline-wide" data-action="export">导出 CSV</button>
+        <button class="outline-wide danger" data-action="reset">清空数据</button>
+      </div>
+    </section>
+  `;
+}
+
+function settingRow(icon, label, value) {
+  return `
+    <div class="setting-row">
+      <b>${icon}</b>
+      <div><span>${label}</span><strong>${value}</strong></div>
+      <i>›</i>
+    </div>
+  `;
+}
+
+function renderQuiz() {
   const queue = dueCards(state.cards);
   const cards = queue.length ? queue : state.cards;
-  const card = cards[state.quizIndex % cards.length];
-  if (!card) return `<section class="panel empty">还没有卡片。<button class="primary" data-tab="import">去导入</button></section>`;
+  const card = cards[state.quizIndex % Math.max(cards.length, 1)];
+  if (!card) return `<section class="screen">${statusBar('8:32')}<button data-tab="add">先上传资料</button></section>`;
   const options = makeOptions(card, state.cards);
   return `
-    <section class="panel quiz-panel">
-      <div class="quiz-top">
-        <div>
-          <p class="eyebrow">主动回忆</p>
-          <h2>${state.mode === 'flip' ? '先想答案，再翻卡' : state.mode === 'type' ? '输入答案' : '选择正确答案'}</h2>
-        </div>
-        <div class="mode-switch">
-          ${['choice', 'type', 'flip']
-            .map((mode) => `<button class="${state.mode === mode ? 'active' : ''}" data-mode="${mode}">${modeLabel(mode)}</button>`)
-            .join('')}
-        </div>
-      </div>
-      <article class="question-card">
+    <section class="screen quiz-screen">
+      ${statusBar('8:32')}
+      <header class="quiz-header">
+        <button data-tab="home">‹</button>
+        <div><strong>${state.quizIndex + 1}/${cards.length}</strong><span>+10 XP</span></div>
+        <b>🔥 ${state.streak}</b>
+      </header>
+      <article class="quiz-card">
         <div class="tag-row">${card.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
         <h1>${card.question}</h1>
         ${renderAnswerInput(card, options)}
         ${state.showResult ? renderResult(card) : ''}
       </article>
+      <section class="quiz-tools">
+        <button class="${state.mode === 'choice' ? 'active' : ''}" data-mode="choice">选择</button>
+        <button class="${state.mode === 'type' ? 'active' : ''}" data-mode="type">填空</button>
+        <button class="${state.mode === 'flip' ? 'active' : ''}" data-mode="flip">翻卡</button>
+      </section>
+      <section class="card-management">
+        <h2>卡片管理</h2>
+        ${state.cards.slice(0, 4).map(renderManagedCard).join('')}
+      </section>
+      ${renderEditor()}
     </section>
-    <section class="panel">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">卡片管理</p>
-          <h2>可编辑、可删除、可导出</h2>
-        </div>
+  `;
+}
+
+function renderAnswerInput(card, options) {
+  if (state.mode === 'choice') {
+    return `
+      <div class="options">
+        ${options.map((option) => `<button class="${state.selectedOption === option ? 'selected' : ''}" data-option="${escapeAttr(option)}">${option}</button>`).join('')}
       </div>
-      <div class="card-list">${state.cards.slice(0, 8).map(renderManagedCard).join('')}</div>
-    </section>
-    ${renderEditor()}
+      <button class="primary-cta" data-action="submit-choice">Check answer</button>
+    `;
+  }
+  if (state.mode === 'type') {
+    return `
+      <input id="answerInput" class="answer-input" value="${escapeAttr(state.answerDraft)}" placeholder="输入你回忆出的答案" />
+      <button class="primary-cta" data-action="submit-type">Check answer</button>
+    `;
+  }
+  return `<button class="primary-cta" data-action="reveal">Reveal answer</button>`;
+}
+
+function renderResult(card) {
+  return `
+    <div class="result ${state.lastCorrect ? 'correct' : 'wrong'}">
+      <strong>${state.lastCorrect ? 'Correct!' : 'Try again'}</strong>
+      <p>答案：${card.answer}</p>
+      <blockquote>${card.source}</blockquote>
+      <p>${card.explanation}</p>
+      <div class="rating-row">
+        <button data-rating="1">Again</button>
+        <button data-rating="2">Hard</button>
+        <button data-rating="3">Good</button>
+        <button data-rating="4">Easy</button>
+      </div>
+    </div>
   `;
 }
 
 function renderManagedCard(card) {
   return `
-    <article class="study-card managed-card">
-      <div class="tag-row">${card.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
-      <h3>${card.question}</h3>
-      <p>答案：${card.answer}</p>
-      <div class="mini-actions">
-        <button class="ghost" data-edit="${card.id}">编辑</button>
-        <button class="ghost danger" data-delete="${card.id}">删除</button>
-      </div>
+    <article class="managed-card">
+      <strong>${shortText(card.question, 28)}</strong>
+      <span>${card.answer}</span>
+      <div><button data-edit="${card.id}">编辑</button><button class="danger" data-delete="${card.id}">删除</button></div>
     </article>
   `;
 }
@@ -271,130 +515,15 @@ function renderEditor() {
   if (!card) return '';
   return `
     <div class="editor-backdrop">
-      <section class="panel editor">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">编辑卡片</p>
-            <h2>保留来源，修正表达</h2>
-          </div>
-          <button class="ghost" data-action="close-editor">关闭</button>
-        </div>
+      <section class="editor-card">
+        <div class="section-row"><h2>编辑卡片</h2><button data-action="close-editor">关闭</button></div>
         <label>题干<textarea id="editQuestion" rows="3">${escapeHtml(card.question)}</textarea></label>
         <label>答案<input id="editAnswer" class="answer-input" value="${escapeAttr(card.answer)}" /></label>
-        <label>解释<textarea id="editExplanation" rows="4">${escapeHtml(card.explanation)}</textarea></label>
-        <label>来源<textarea id="editSource" rows="4">${escapeHtml(card.source)}</textarea></label>
-        <button class="primary full" data-action="save-card">保存卡片</button>
+        <label>解释<textarea id="editExplanation" rows="3">${escapeHtml(card.explanation)}</textarea></label>
+        <label>来源<textarea id="editSource" rows="3">${escapeHtml(card.source)}</textarea></label>
+        <button class="primary-cta" data-action="save-card">保存卡片</button>
       </section>
     </div>
-  `;
-}
-
-function modeLabel(mode) {
-  return { choice: '选择', type: '填空', flip: '翻卡' }[mode];
-}
-
-function renderAnswerInput(card, options) {
-  if (state.mode === 'choice') {
-    return `
-      <div class="options">
-        ${options
-          .map(
-            (option) => `
-              <button class="${state.selectedOption === option ? 'selected' : ''}" data-option="${escapeAttr(option)}">
-                ${option}
-              </button>
-            `
-          )
-          .join('')}
-      </div>
-      <button class="primary full" data-action="submit-choice">提交答案</button>
-    `;
-  }
-  if (state.mode === 'type') {
-    return `
-      <input id="answerInput" class="answer-input" value="${escapeAttr(state.answerDraft)}" placeholder="输入你回忆出的关键词" />
-      <button class="primary full" data-action="submit-type">提交答案</button>
-    `;
-  }
-  return `
-    <button class="primary full" data-action="reveal">显示答案</button>
-  `;
-}
-
-function renderResult(card) {
-  const correct = state.lastCorrect;
-  return `
-    <div class="result ${correct ? 'correct' : 'wrong'}">
-      <strong>${correct ? '答对了' : '需要回炉'}</strong>
-      <p>答案：${card.answer}</p>
-      <p>${card.explanation}</p>
-      <blockquote>${card.source}</blockquote>
-      <div class="rating-row">
-        <button data-rating="1">再来</button>
-        <button data-rating="2">困难</button>
-        <button data-rating="3">记住</button>
-        <button data-rating="4">很熟</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderGroup() {
-  const group = state.groups[0];
-  return `
-    <section class="panel">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">学习小组</p>
-          <h2>${group.name}</h2>
-        </div>
-        <button class="secondary">邀请同学</button>
-      </div>
-      <div class="challenge">${group.challenge}</div>
-      <div class="leaderboard">
-        ${group.members
-          .sort((a, b) => b.xp - a.xp)
-          .map(
-            (member, index) => `
-              <div class="leader">
-                <span class="rank">${index + 1}</span>
-                <img src="${member.avatar}" alt="${member.name}" />
-                <strong>${member.name}</strong>
-                <span>${member.xp} XP</span>
-              </div>
-            `
-          )
-          .join('')}
-      </div>
-    </section>
-    <section class="panel">
-      <h2>小组共享卡组</h2>
-      <div class="card-list">${state.cards.slice(0, 3).map(renderCardPreview).join('')}</div>
-    </section>
-  `;
-}
-
-function renderProfile() {
-  return `
-    <section class="panel profile-panel">
-      <div class="profile-head">
-        <img src="${ipImage}" alt="闪学 IP" />
-        <div>
-          <p class="eyebrow">数据与合规</p>
-          <h2>我的闪学</h2>
-          <p>本版本为本地优先体验，学习数据保存在浏览器本机。</p>
-        </div>
-      </div>
-      <div class="settings-list">
-        <label><input type="checkbox" data-action="minor" ${state.minorMode ? 'checked' : ''} /> 未成年人保护模式</label>
-        <div><strong>AI 标识</strong><span>所有生成内容均标记为学习参考，并保留来源片段。</span></div>
-        <div><strong>隐私</strong><span>上传资料不用于训练模型；可一键清空本地数据。</span></div>
-      </div>
-      <div class="import-actions">
-        <button class="secondary" data-action="reset">清空本地数据</button>
-        <button class="ghost" data-action="export">导出 CSV</button>
-      </div>
-    </section>
   `;
 }
 
@@ -405,15 +534,12 @@ function bindEvents() {
   document.querySelectorAll('[data-mode]').forEach((button) => {
     button.addEventListener('click', () => setState({ mode: button.dataset.mode, showResult: false }));
   });
+  document.querySelectorAll('[data-deck-tab]').forEach((button) => {
+    button.addEventListener('click', () => setState({ deckTab: button.dataset.deckTab }));
+  });
   document.querySelectorAll('[data-option]').forEach((button) => {
     button.addEventListener('click', () => setState({ selectedOption: button.dataset.option }));
   });
-  const importText = document.querySelector('#importText');
-  if (importText) importText.addEventListener('input', (event) => (state.importText = event.target.value));
-  const answerInput = document.querySelector('#answerInput');
-  if (answerInput) answerInput.addEventListener('input', (event) => (state.answerDraft = event.target.value));
-  const fileInput = document.querySelector('#fileInput');
-  if (fileInput) fileInput.addEventListener('change', handleFileImport);
   document.querySelectorAll('[data-edit]').forEach((button) => {
     button.addEventListener('click', () => setState({ editingCardId: button.dataset.edit }));
   });
@@ -426,15 +552,27 @@ function bindEvents() {
   document.querySelectorAll('[data-rating]').forEach((button) => {
     button.addEventListener('click', () => applyRating(Number(button.dataset.rating)));
   });
+  const importText = document.querySelector('#importText');
+  if (importText) importText.addEventListener('input', (event) => (state.importText = event.target.value));
+  const answerInput = document.querySelector('#answerInput');
+  if (answerInput) answerInput.addEventListener('input', (event) => (state.answerDraft = event.target.value));
+  const fileInput = document.querySelector('#fileInput');
+  if (fileInput) fileInput.addEventListener('change', handleFileImport);
 }
 
 function handleAction(action) {
   if (action === 'generate') {
     const text = document.querySelector('#importText')?.value || state.importText;
     const cards = generateCardsFromText(text, '我的智能卡组');
-    setState({ cards: [...cards, ...state.cards], importText: text, tab: 'study', quizIndex: 0, showResult: false });
+    setState({
+      cards: [...cards, ...state.cards],
+      importText: text,
+      tab: 'quiz',
+      quizIndex: 0,
+      showResult: false,
+      xp: state.xp + 20
+    });
   }
-  if (action === 'sample') setState({ importText: seedText });
   if (action === 'submit-choice') {
     const card = currentCard();
     setState({ showResult: true, lastCorrect: state.selectedOption === card.answer });
@@ -447,23 +585,42 @@ function handleAction(action) {
   if (action === 'close-editor') setState({ editingCardId: '' });
   if (action === 'save-card') saveEditedCard();
   if (action === 'minor') setState({ minorMode: !state.minorMode });
+  if (action === 'export') downloadCsv();
   if (action === 'reset' && confirm('确定清空本地学习数据？')) {
     localStorage.removeItem(storageKey);
     state = defaultState;
     saveState();
     render();
   }
-  if (action === 'export') downloadCsv();
 }
 
 function handleFileImport(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
-    setState({ importText: String(reader.result || ''), tab: 'import' });
-  };
+  reader.onload = () => setState({ importText: String(reader.result || ''), tab: 'add' });
   reader.readAsText(file, 'utf-8');
+}
+
+function currentCard() {
+  const queue = dueCards(state.cards);
+  const cards = queue.length ? queue : state.cards;
+  return cards[state.quizIndex % cards.length];
+}
+
+function applyRating(rating) {
+  const card = currentCard();
+  const updated = scheduleCard(card, rating);
+  setState({
+    cards: state.cards.map((item) => (item.id === card.id ? updated : item)),
+    quizIndex: state.quizIndex + 1,
+    answerDraft: '',
+    selectedOption: '',
+    showResult: false,
+    lastCorrect: null,
+    xp: state.xp + (rating >= 3 ? 10 : 3),
+    streak: rating >= 3 ? state.streak + 1 : state.streak
+  });
 }
 
 function saveEditedCard() {
@@ -485,26 +642,6 @@ function deleteCard(id) {
   setState({ cards: state.cards.filter((card) => card.id !== id), quizIndex: 0, showResult: false });
 }
 
-function currentCard() {
-  const cards = dueCards(state.cards);
-  const queue = cards.length ? cards : state.cards;
-  return queue[state.quizIndex % queue.length];
-}
-
-function applyRating(rating) {
-  const card = currentCard();
-  const updated = scheduleCard(card, rating);
-  const cards = state.cards.map((item) => (item.id === card.id ? updated : item));
-  setState({
-    cards,
-    quizIndex: state.quizIndex + 1,
-    answerDraft: '',
-    selectedOption: '',
-    showResult: false,
-    lastCorrect: null
-  });
-}
-
 function downloadCsv() {
   const blob = new Blob([exportCsv(state.cards)], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -515,8 +652,27 @@ function downloadCsv() {
   URL.revokeObjectURL(url);
 }
 
+function deckGroups() {
+  const colors = ['#97eb2f', '#ff9a3d', '#7c83ff', '#2ecdf2'];
+  const groups = new Map();
+  for (const card of state.cards) {
+    const title = card.deckTitle || '我的智能卡组';
+    groups.set(title, (groups.get(title) || 0) + 1);
+  }
+  return [...groups.entries()].map(([title, count], index) => ({ title, count, color: colors[index % colors.length] }));
+}
+
+function masteryCount() {
+  return state.cards.filter((card) => card.stability >= 3).length;
+}
+
+function shortText(text, length) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim();
+  return clean.length > length ? `${clean.slice(0, length)}...` : clean;
+}
+
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
 
 function escapeAttr(value) {
