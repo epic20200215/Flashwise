@@ -17,18 +17,20 @@
 - [docs/android-packaging.md](docs/android-packaging.md)：Android 打包路线和 OCKI 可参考文件说明。
 - [docs/completion-audit.md](docs/completion-audit.md)：当前交付完成审计。
 - [docs/mobile-redesign-audit.md](docs/mobile-redesign-audit.md)：对照 Gizmo 截图后的手机竖版改版审计。
+- [docs/integration-requirements.md](docs/integration-requirements.md)：云服务器、大模型、OCR/ASR、账号和上线合规的配置需求表。
 
 ## 当前可运行版本
 
 本仓库已包含一个零依赖 PWA 版本，覆盖闪学 MVP 核心闭环：
 
 - 今日复习与掌握率。
-- 粘贴资料后模拟 AI 生成带来源片段的闪卡。
+- 粘贴、文本文件、照片文字或视频笔记生成带来源片段的闪卡。
+- History 搜索真实本地资料、Notes 和答题记录，不展示本地假数据。
 - 手机竖版 App 信息架构：Home / Progress / Add / Decks / Profile。
 - 选择题、填空题、翻卡练习。
 - FSRS 风格复习调度。
-- 学习小组、头像、排行榜和共享卡组。
-- 本地数据保存、CSV 导出、未成年人保护模式、AI 标识。
+- Notes 保存、卡片编辑删除、本地进度、CSV 导出和未成年人保护模式。
+- 公共卡组、好友排行榜、云端同步、OCR/ASR 和真实大模型生成功能已在产品内标记为“未配置”，等待后端与云服务接入后启用。
 
 ## 本地命令
 

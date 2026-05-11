@@ -17,6 +17,11 @@ test('generates traceable cards from Chinese study text', () => {
   assert.ok(cards.every((card) => card.question.includes('____') || card.question.includes('请回忆')));
 });
 
+test('does not generate cards without real source text', () => {
+  assert.deepEqual(generateCardsFromText(''), []);
+  assert.deepEqual(generateCardsFromText('   '), []);
+});
+
 test('grades flexible keyword answers', () => {
   assert.equal(gradeAnswer('间隔重复', '间隔重复'), true);
   assert.equal(gradeAnswer('重复', '间隔重复'), true);

@@ -5,54 +5,28 @@ import {
   gradeAnswer,
   makeOptions,
   mastery,
-  scheduleCard,
-  seedText
+  scheduleCard
 } from './core.js';
 
-const storageKey = 'flashwise-state-v3';
+const storageKey = 'flashwise-state-v4';
 const ipImage = './images/ip_ocki.png';
-const avatarFemale = './images/profilepicture-female.png';
-const avatarMale = './images/profilepicture-male.png';
-
-const courseOptions = ['History', 'Geography', 'Biology', 'English', '考研政治', '大学英语四级', '教师资格证', '公务员行测', '法考民法'];
-
-const publicDecks = [
-  ['考研英语 高频词根', 86, '考研', '英语', '+3', '#7c83ff'],
-  ['中国近现代史纲要', 72, '考研', '政治', '+2', '#97eb2f'],
-  ['教资 科目二教育心理', 54, '教资', '教育学', '+2', '#ff9a3d'],
-  ['公考常识 判断推理', 128, '公考', '行测', '+4', '#ff5b73'],
-  ['大学英语四级核心短语', 93, 'CET4', '英语', '+1', '#32c9f4'],
-  ['法考 民法基础概念', 64, '法考', '民法', '+2', '#21d6b5'],
-  ['高中生物 细胞代谢', 110, '高中', '生物', '+2', '#f971c8']
-];
-
-const leaderboard = [
-  ['alicia', '155k XP', avatarFemale, '1'],
-  ['Scarlett', '55k XP', avatarMale, '2'],
-  ['Sophia wu', '9.8k XP', avatarFemale, '3'],
-  ['Isa Chen', '1.5k XP', avatarMale, '4'],
-  ['Alex Chiu', '815 XP', avatarFemale, '5'],
-  ['Rachel Park', '450 XP', avatarMale, '6'],
-  ['Neela S', '400 XP', avatarFemale, '7'],
-  ['evan g', '355 XP', avatarMale, '8']
-];
 
 const defaultState = {
   tab: 'home',
   deckTab: 'my',
   mode: 'choice',
-  activeSubject: 'History',
-  subjectQuery: '',
+  historySheetOpen: false,
+  historyQuery: '',
   addSheetOpen: false,
-  subjectSheetOpen: false,
   createType: 'cards',
   selectedSource: 'paste',
-  importText: seedText,
+  importText: '',
   urlDraft: '',
   noteTitle: '',
   noteBody: '',
   photoDraft: null,
   materialName: '',
+  message: '',
   quizIndex: 0,
   answerDraft: '',
   selectedOption: '',
@@ -60,11 +34,14 @@ const defaultState = {
   lastCorrect: null,
   editingCardId: '',
   minorMode: false,
-  xp: 150,
-  level: 3,
-  streak: 1,
+  xp: 0,
+  level: 1,
+  streak: 0,
+  lastStudyDate: '',
+  sourceDocuments: [],
   notes: [],
-  cards: generateCardsFromText(seedText, 'History')
+  cards: [],
+  attempts: []
 };
 
 let state = loadState();
@@ -72,8 +49,15 @@ let state = loadState();
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-    if (!saved || !Array.isArray(saved.cards)) return defaultState;
-    return { ...defaultState, ...saved, notes: Array.isArray(saved.notes) ? saved.notes : [] };
+    if (!saved) return defaultState;
+    return {
+      ...defaultState,
+      ...saved,
+      sourceDocuments: Array.isArray(saved.sourceDocuments) ? saved.sourceDocuments : [],
+      notes: Array.isArray(saved.notes) ? saved.notes : [],
+      cards: Array.isArray(saved.cards) ? saved.cards : [],
+      attempts: Array.isArray(saved.attempts) ? saved.attempts : []
+    };
   } catch {
     return defaultState;
   }
@@ -110,7 +94,7 @@ function renderScreen() {
 }
 
 function renderOverlays() {
-  return `${state.subjectSheetOpen ? renderSubjectSheet() : ''}${state.addSheetOpen ? renderAddSheet() : ''}`;
+  return `${state.historySheetOpen ? renderHistorySheet() : ''}${state.addSheetOpen ? renderAddSheet() : ''}`;
 }
 
 function renderBottomNav() {
@@ -141,17 +125,18 @@ function renderBottomNav() {
 
 function renderHome() {
   const due = dueCards(state.cards);
-  const cardsByDeck = deckGroups();
+  const groups = deckGroups();
+  const latestDocument = state.sourceDocuments[0];
   return `
     <section class="screen home-screen">
-      ${statusBar('8:42')}
-      <button class="subject-chip" data-action="open-subject-sheet">⏱️ ${escapeHtml(state.activeSubject)}</button>
+      ${statusBar()}
+      <button class="subject-chip" data-action="open-history">⏱️ History</button>
       <img class="home-mascot" src="${ipImage}" alt="闪学 IP" />
       <h1 class="home-title">今天学什么？</h1>
       <section class="study-prompt" data-action="toggle-add-sheet">
         <div>
           <span>我想学习...</span>
-          <strong>${state.importText ? shortText(state.importText, 18) : '上传课件、笔记或错题'}</strong>
+          <strong>${latestDocument ? escapeHtml(shortText(latestDocument.title, 18)) : '上传资料或创建笔记'}</strong>
         </div>
         <b>＋</b>
       </section>
@@ -161,66 +146,64 @@ function renderHome() {
         ${sourceButton('📷', 'Photo', 'photo')}
         ${sourceButton('🎬', 'Video', 'video')}
         ${sourceButton('📋', 'Paste', 'paste')}
-        ${sourceButton('⌄', 'More', 'paste')}
+        ${sourceButton('⌕', 'History', 'history')}
       </div>
       <section class="section-block">
         <h2>Jump back in</h2>
-        <article class="jump-card" data-tab="quiz">
-          <div class="progress-ring">${mastery(state.cards)}%</div>
-          <div>
-            <strong>${cardsByDeck[0]?.title || '智能导入卡组'}</strong>
-            <span>${due.length || state.cards.length} questions ready</span>
-          </div>
-        </article>
+        ${
+          state.cards.length
+            ? `<article class="jump-card" data-tab="quiz">
+                <div class="progress-ring">${mastery(state.cards)}%</div>
+                <div><strong>${escapeHtml(groups[0]?.title || '我的卡组')}</strong><span>${due.length || state.cards.length} questions ready</span></div>
+              </article>`
+            : renderEmptyCard('还没有学习记录', '上传资料后会生成闪卡、测验和历史记录。', '开始上传', 'toggle-add-sheet')
+        }
       </section>
       <section class="section-block">
-        <div class="section-row">
-          <h2>热门课程卡组</h2>
-          <button data-tab="decks">查看</button>
-        </div>
-        <div class="deck-carousel">${publicDecks.slice(0, 3).map(renderDeckMini).join('')}</div>
-      </section>
-      <section class="section-block">
-        <div class="section-row">
-          <h2>我的卡组</h2>
-          <button data-action="toggle-add-sheet">＋</button>
-        </div>
-        ${cardsByDeck.map(renderDeckRow).join('')}
+        <div class="section-row"><h2>我的卡组</h2><button data-action="toggle-add-sheet">＋</button></div>
+        ${groups.length ? groups.map(renderDeckRow).join('') : renderEmptyCard('暂无卡组', 'Cards 创建成功后会出现在这里。', '创建 Cards', 'toggle-add-sheet')}
       </section>
       ${state.notes.length ? renderRecentNotes() : ''}
     </section>
   `;
 }
 
-function renderSubjectSheet() {
-  const query = state.subjectQuery.trim().toLowerCase();
-  const options = courseOptions.filter((item) => item.toLowerCase().includes(query));
+function renderHistorySheet() {
+  const results = historyResults();
   return `
     <div class="sheet-dim">
       <section class="bottom-sheet subject-sheet">
         <header class="sheet-header">
           <span></span>
-          <h2>${escapeHtml(state.activeSubject)}</h2>
-          <button data-action="close-subject-sheet">×</button>
+          <h2>History</h2>
+          <button data-action="close-history">×</button>
         </header>
         <label class="search-box">
           <span>⌕</span>
-          <input id="subjectSearch" value="${escapeAttr(state.subjectQuery)}" placeholder="Search" />
+          <input id="historySearch" value="${escapeAttr(state.historyQuery)}" placeholder="Search" />
         </label>
-        <div class="subject-results">
-          ${options
-            .map(
-              (item) => `
-                <button class="${item === state.activeSubject ? 'selected' : ''}" data-subject="${escapeAttr(item)}">
-                  <strong>${escapeHtml(item)}</strong>
-                  <span>${item === state.activeSubject ? '当前课程' : '切换课程'}</span>
-                </button>
-              `
-            )
-            .join('')}
+        <div class="history-results">
+          ${
+            results.length
+              ? results.map(renderHistoryResult).join('')
+              : `<div class="history-empty"><strong>没有找到记录</strong><span>你生成过的卡组、保存的 Notes、学习过的资料会出现在这里。</span></div>`
+          }
         </div>
       </section>
     </div>
+  `;
+}
+
+function renderHistoryResult(item) {
+  return `
+    <button class="history-row" data-history-id="${item.id}" data-history-kind="${item.kind}">
+      <b>${item.icon}</b>
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(item.meta)}</span>
+      </div>
+      <small>${formatDate(item.createdAt)}</small>
+    </button>
   `;
 }
 
@@ -243,11 +226,12 @@ function renderAddSheet() {
   `;
 }
 
-function statusBar(time) {
+function statusBar() {
+  const time = new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit' }).format(new Date());
   return `
     <div class="status-bar">
       <span>${time}</span>
-      <span>HD ▮▮▮  WiFi  87% ●</span>
+      <span>Local PWA</span>
     </div>
   `;
 }
@@ -262,35 +246,34 @@ function uploadButton(icon, label, tab) {
 }
 
 function sourceButton(icon, label, source) {
+  const action = source === 'history' ? 'data-action="open-history"' : `data-open-source="${source}"`;
   return `
-    <button class="upload-pill" data-open-source="${source}">
+    <button class="upload-pill" ${action}>
       <span>${icon}</span>
       <strong>${label}</strong>
     </button>
   `;
 }
 
-function renderDeckMini(deck) {
-  const [title, count, level, subject, extra, color] = deck;
-  return `
-    <article class="deck-mini">
-      <i style="background:${color}"></i>
-      <strong>${title}</strong>
-      <span>${count} cards</span>
-      <div><small>${level}</small><small>${subject}</small><small>${extra}</small></div>
-    </article>
-  `;
-}
-
 function renderDeckRow(deck) {
   return `
-    <article class="deck-row" data-tab="quiz">
+    <article class="deck-row" data-deck-title="${escapeAttr(deck.title)}">
       <i style="background:${deck.color}"></i>
       <div>
         <strong>${escapeHtml(deck.title)}</strong>
         <span>${deck.count} cards</span>
       </div>
       <b>⋮</b>
+    </article>
+  `;
+}
+
+function renderEmptyCard(title, text, buttonLabel, action) {
+  return `
+    <article class="empty-card">
+      <strong>${title}</strong>
+      <span>${text}</span>
+      <button data-action="${action}">${buttonLabel}</button>
     </article>
   `;
 }
@@ -306,7 +289,7 @@ function renderRecentNotes() {
 
 function renderNoteCard(note) {
   return `
-    <article class="note-card">
+    <article class="note-card" data-history-id="${note.id}" data-history-kind="note">
       ${note.image ? `<img src="${note.image}" alt="${escapeAttr(note.title)}" />` : ''}
       <div>
         <strong>${escapeHtml(note.title)}</strong>
@@ -317,85 +300,59 @@ function renderNoteCard(note) {
 }
 
 function renderProgress() {
+  const studiedDates = new Set(state.attempts.map((attempt) => dateKey(attempt.createdAt)));
   return `
     <section class="screen progress-screen">
-      ${statusBar('8:42')}
+      ${statusBar()}
       <header class="level-card">
         <img src="${ipImage}" alt="闪学 IP" />
         <div>
-          <strong>Novice</strong>
-          <span>${state.xp % 100 || 50} XP</span>
+          <strong>Level ${state.level}</strong>
+          <span>${state.xp} XP</span>
         </div>
-        <b>Level ${state.level}: ${state.xp} XP</b>
+        <b>${state.cards.length} cards</b>
       </header>
       <section class="section-block">
         <h2>Start your streak!</h2>
         <article class="streak-card">
           <div>🔥</div>
-          <strong>2 questions</strong>
-          <span>to start your streak</span>
+          <strong>${state.streak} day streak</strong>
+          <span>${state.cards.length ? `${dueCards(state.cards).length || state.cards.length} questions available` : 'Create cards to start'}</span>
         </article>
         <div class="calendar-row">${['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => `<b>${day}</b>`).join('')}</div>
-        <div class="calendar-grid">${Array.from({ length: 14 }, (_, index) => `<span class="${index === 8 ? 'today' : ''}">${index + 3}</span>`).join('')}</div>
-        <button class="dark-cta" data-tab="quiz">🎮 Start streak</button>
-      </section>
-      <section class="section-block">
-        <h2>Jump back in</h2>
-        <article class="jump-card" data-tab="quiz">
-          <div class="progress-ring">${mastery(state.cards)}%</div>
-          <div><strong>${deckGroups()[0]?.title || '我的卡组'}</strong><span>Quiz</span></div>
-        </article>
+        <div class="calendar-grid">${calendarDays().map((day) => `<span class="${studiedDates.has(day.key) ? 'studied' : ''} ${day.today ? 'today' : ''}">${day.label}</span>`).join('')}</div>
+        <button class="dark-cta" data-tab="${state.cards.length ? 'quiz' : 'add'}">🎮 ${state.cards.length ? 'Start streak' : 'Create cards'}</button>
       </section>
       <section class="section-block">
         <h2>Deck progress</h2>
-        <article class="jump-card">
-          <div class="progress-ring">${mastery(state.cards)}%</div>
-          <div><strong>${deckGroups()[0]?.title || '我的卡组'}</strong><span>${masteryCount()} of ${state.cards.length} cards mastered</span></div>
+        ${
+          state.cards.length
+            ? `<article class="jump-card"><div class="progress-ring">${mastery(state.cards)}%</div><div><strong>${masteryCount()} of ${state.cards.length} cards mastered</strong><span>${dueCards(state.cards).length} due now</span></div></article>`
+            : renderEmptyCard('暂无进度', '完成一次资料导入后，这里会显示真实掌握率和复习进度。', '创建 Cards', 'toggle-add-sheet')
+        }
+      </section>
+      <section class="section-block">
+        <h2>Activity</h2>
+        ${state.attempts.length ? state.attempts.slice(0, 8).map(renderAttempt).join('') : renderEmptyCard('没有学习动态', '答题记录会按时间出现在这里。', '开始学习', state.cards.length ? 'start-quiz' : 'toggle-add-sheet')}
+      </section>
+      <section class="section-block">
+        <h2>Social features</h2>
+        <article class="empty-card locked">
+          <strong>好友排行榜和学习小组需要云端账号</strong>
+          <span>当前版本不会展示假好友或假排行榜。接入腾讯云、登录和后端后再启用。</span>
+          <button data-tab="profile">查看配置需求</button>
         </article>
-      </section>
-      <section class="section-block">
-        <h2>Your friends leaderboard</h2>
-        <div class="leader-tabs"><button>Day</button><button>Week</button><button>Month</button><button class="active">All Time</button></div>
-        <div class="leaderboard">${leaderboard.map(renderLeader).join('')}</div>
-        <button class="dark-cta">👥 Find friends</button>
-      </section>
-      <section class="section-block">
-        <div class="section-row"><h2>Your study groups</h2><button>＋</button></div>
-        <article class="group-card">
-          <div class="faces"><span>🐬</span><span>🧠</span><span>🐸</span><span>💀</span></div>
-          <strong>Study with friends</strong>
-          <span>Learn and study together</span>
-          <button class="dark-cta">Create group</button>
-        </article>
-      </section>
-      <section class="section-block">
-        <h2>Following</h2>
-        ${renderFeed('tianxuo chen', 'Level 2!', '💎', '10 days ago')}
-        ${renderFeed('alicia', '2 day streak!', '🔥', '58 days ago', 'emerald')}
-        ${renderFeed('Isa Chen', '1 day streak!', '🔥', '81 days ago', 'gold')}
       </section>
     </section>
   `;
 }
 
-function renderLeader(item) {
-  const [name, xp, avatar, rank] = item;
+function renderAttempt(attempt) {
   return `
-    <div class="leader-row">
-      <b>${rank}</b>
-      <img src="${avatar}" alt="${name}" />
-      <strong>${name}</strong>
-      <span>${xp}</span>
-    </div>
-  `;
-}
-
-function renderFeed(name, text, icon, time, variant = '') {
-  return `
-    <article class="feed-card">
-      <header><img src="${avatarFemale}" alt="${name}" /><div><strong>${name}</strong><span>${time}</span></div></header>
-      <div class="feed-badge ${variant}"><strong>${text}</strong><b>${icon}</b></div>
-      <footer><button>♡ 1</button><button>☺︎</button></footer>
+    <article class="activity-row">
+      <b>${attempt.correct ? '✓' : '↻'}</b>
+      <div><strong>${escapeHtml(attempt.title)}</strong><span>${formatDate(attempt.createdAt)} · ${attempt.correct ? 'correct' : 'review again'}</span></div>
+      <small>+${attempt.xp} XP</small>
     </article>
   `;
 }
@@ -404,7 +361,7 @@ function renderAdd() {
   const isNotes = state.createType === 'notes';
   return `
     <section class="screen add-screen">
-      ${statusBar('8:42')}
+      ${statusBar()}
       <header class="page-title">
         <button data-tab="home">‹</button>
         <h1>${isNotes ? 'Create notes' : 'Create flashcards'}</h1>
@@ -413,8 +370,9 @@ function renderAdd() {
       <section class="add-hero">
         <div class="plus-orb">${isNotes ? '✎' : '＋'}</div>
         <h2>${isNotes ? '写下自由笔记' : '上传资料，马上开考'}</h2>
-        <p>${isNotes ? 'Notes 会保存为可复习材料，稍后可一键转成卡片。' : 'Cards 会把资料变成可追溯闪卡和 Quiz。'}</p>
+        <p>${isNotes ? 'Notes 会保存到 History，并可作为后续制卡资料。' : 'Cards 会基于你输入或上传的真实资料生成。'}</p>
       </section>
+      ${state.message ? `<div class="message">${escapeHtml(state.message)}</div>` : ''}
       ${isNotes ? renderNotesComposer() : renderCardsComposer()}
     </section>
   `;
@@ -423,20 +381,20 @@ function renderAdd() {
 function renderCardsComposer() {
   return `
     <div class="source-grid">
-      ${sourceTile('📄', '文件上传', 'PDF / Word / TXT', 'file')}
-      ${sourceTile('📷', '拍照识别', '手写笔记 / 错题', 'photo')}
-      ${sourceTile('📋', '粘贴文本', '课堂笔记 / 公众号', 'paste')}
-      ${sourceTile('🎬', '视频链接', 'B 站 / 网课摘要', 'video')}
+      ${sourceTile('📄', '文件上传', 'TXT / MD / CSV', 'file')}
+      ${sourceTile('📷', '拍照记录', '图片预览 + 手动文字', 'photo')}
+      ${sourceTile('📋', '粘贴文本', '课堂笔记 / 讲义', 'paste')}
+      ${sourceTile('🎬', '视频链接', '链接 + 字幕笔记', 'video')}
     </div>
     <section class="upload-composer">
       ${renderSourceInput()}
-      <button class="primary-cta" data-action="generate">AI 生成闪卡和测验</button>
+      <button class="primary-cta" data-action="generate">生成闪卡和测验</button>
     </section>
     <section class="pipeline">
-      <h2>生成后你会得到</h2>
-      <div><span>1</span><strong>关键知识点</strong><small>自动拆分章节和概念</small></div>
-      <div><span>2</span><strong>多题型 Quiz</strong><small>选择、填空、翻卡主动回忆</small></div>
-      <div><span>3</span><strong>游戏化复习</strong><small>XP、streak、排行榜、到期复习</small></div>
+      <h2>本地已实装</h2>
+      <div><span>1</span><strong>保存资料历史</strong><small>每次生成都会进入 History 搜索</small></div>
+      <div><span>2</span><strong>生成可编辑卡片</strong><small>选择、填空、翻卡都可练习</small></div>
+      <div><span>3</span><strong>真实进度记录</strong><small>XP、streak、到期复习来自你的学习行为</small></div>
     </section>
   `;
 }
@@ -458,13 +416,13 @@ function renderSourceInput() {
         <input id="photoInput" type="file" accept="image/*" />
       </label>
       ${state.photoDraft?.image ? `<img class="photo-preview" src="${state.photoDraft.image}" alt="${escapeAttr(state.photoDraft.name)}" />` : ''}
-      <textarea id="importText" rows="6" placeholder="补充图片中的文字或要记忆的内容...">${escapeHtml(state.importText)}</textarea>
+      <textarea id="importText" rows="6" placeholder="请手动补充图片中的文字。真实 OCR 需要接入云服务。">${escapeHtml(state.importText)}</textarea>
     `;
   }
   if (state.selectedSource === 'video') {
     return `
       <input id="urlInput" class="answer-input" value="${escapeAttr(state.urlDraft)}" placeholder="粘贴 B 站 / 网课 / YouTube 链接" />
-      <textarea id="importText" rows="6" placeholder="补充视频标题、字幕、笔记或要学习的片段...">${escapeHtml(state.importText)}</textarea>
+      <textarea id="importText" rows="6" placeholder="请粘贴视频字幕、课件摘要或你整理的笔记。自动转写需要接入云服务。">${escapeHtml(state.importText)}</textarea>
     `;
   }
   return `
@@ -476,7 +434,7 @@ function renderNotesComposer() {
   return `
     <section class="upload-composer">
       <input id="noteTitle" class="answer-input" value="${escapeAttr(state.noteTitle)}" placeholder="笔记标题" />
-      <textarea id="noteBody" rows="10" placeholder="写自由笔记，可以稍后转成闪卡...">${escapeHtml(state.noteBody)}</textarea>
+      <textarea id="noteBody" rows="10" placeholder="写自由笔记，可以稍后复制到 Cards 生成闪卡...">${escapeHtml(state.noteBody)}</textarea>
       <button class="primary-cta" data-action="save-note">保存 Notes</button>
     </section>
     <section class="section-block">
@@ -499,11 +457,11 @@ function sourceTile(icon, title, subtitle, source) {
 function renderDecks() {
   return `
     <section class="screen decks-screen">
-      ${statusBar('8:42')}
+      ${statusBar()}
       <header class="page-title">
         <span></span>
         <h1>Decks</h1>
-        <button>⌕</button>
+        <button data-action="open-history">⌕</button>
       </header>
       <div class="deck-tabs">
         <button class="${state.deckTab === 'my' ? 'active' : ''}" data-deck-tab="my">My decks</button>
@@ -519,56 +477,55 @@ function renderMyDecks() {
   const groups = deckGroups();
   return `
     <div class="deck-list">
-      ${groups.map(renderDeckRow).join('')}
+      ${groups.length ? groups.map(renderDeckRow).join('') : renderEmptyCard('暂无卡组', '创建 Cards 后会在这里显示真实卡组。', '创建 Cards', 'toggle-add-sheet')}
       ${state.notes.length ? '<h2 class="deck-subtitle">Notes</h2>' : ''}
       ${state.notes.map(renderNoteCard).join('')}
-      <button class="official-search">⌕ Find official course decks</button>
     </div>
   `;
 }
 
 function renderPublicDecks() {
   return `
-    <div class="filter-row"><button>Level⌄</button><button>Subject⌄</button><button>School⌄</button></div>
-    <div class="popular-chip">📈 Popular at “中国大陆学习社区”</div>
-    <div class="deck-list">${publicDecks.map(renderDeckMini).join('')}</div>
+    <div class="deck-list">
+      <article class="empty-card locked">
+        <strong>公共卡组需要云端内容库</strong>
+        <span>当前没有接入后端审核和发布系统，所以不展示假公共卡组。</span>
+        <button data-tab="profile">查看配置需求</button>
+      </article>
+    </div>
   `;
 }
 
 function renderProfile() {
   return `
     <section class="screen profile-screen">
-      ${statusBar('8:42')}
+      ${statusBar()}
       <header class="page-title">
         <button data-tab="home">‹</button>
-        <h1>Edit profile</h1>
+        <h1>Local profile</h1>
         <span></span>
       </header>
       <section class="avatar-edit">
         <img src="${ipImage}" alt="闪学头像" />
-        <button>✎</button>
       </section>
       <section class="settings-card">
-        ${settingRow('👤', 'Name', '闪学用户')}
-        ${settingRow('🇨🇳', 'Country', 'China Mainland')}
+        ${settingRow('👤', 'Account', '未登录，本地模式')}
+        ${settingRow('📚', 'Cards', `${state.cards.length}`)}
+        ${settingRow('📝', 'Notes', `${state.notes.length}`)}
+        ${settingRow('🕘', 'History', `${historyResults('').length}`)}
       </section>
-      <section class="settings-card">
-        ${settingRow('🏫', 'School', '未设置')}
-        ${settingRow('📚', 'Course', state.activeSubject)}
-        ${settingRow('🧭', 'Year', '2026 备考')}
-      </section>
-      <button class="outline-wide">Remove education</button>
       <section class="privacy-row">
         <span>🔒 Private profile</span>
         <label><input type="checkbox" data-action="minor" ${state.minorMode ? 'checked' : ''} /><i></i></label>
       </section>
       <section class="settings-card">
-        ${settingRow('🤖', 'AI 标识', '生成内容仅供学习参考')}
-        ${settingRow('🧹', '本地数据', `${state.cards.length} cards / ${state.notes.length} notes`)}
+        ${settingRow('☁️', '云端同步', '未配置')}
+        ${settingRow('🤖', '大模型生成', '未配置，当前为本地规则生成')}
+        ${settingRow('🧾', 'OCR / ASR', '未配置，需云服务')}
       </section>
       <div class="profile-actions">
         <button class="outline-wide" data-action="export">导出 CSV</button>
-        <button class="outline-wide danger" data-action="reset">清空数据</button>
+        <button class="outline-wide danger" data-action="reset">清空本地数据</button>
       </div>
     </section>
   `;
@@ -588,19 +545,26 @@ function renderQuiz() {
   const queue = dueCards(state.cards);
   const cards = queue.length ? queue : state.cards;
   const card = cards[state.quizIndex % Math.max(cards.length, 1)];
-  if (!card) return `<section class="screen">${statusBar('8:42')}<button data-action="toggle-add-sheet">先上传资料</button></section>`;
+  if (!card) {
+    return `
+      <section class="screen quiz-screen">
+        ${statusBar()}
+        ${renderEmptyCard('还没有卡片', '先上传资料或保存笔记，再开始测验。', '创建 Cards', 'toggle-add-sheet')}
+      </section>
+    `;
+  }
   const options = makeOptions(card, state.cards);
   return `
     <section class="screen quiz-screen">
-      ${statusBar('8:42')}
+      ${statusBar()}
       <header class="quiz-header">
         <button data-tab="home">‹</button>
         <div><strong>${state.quizIndex + 1}/${cards.length}</strong><span>+10 XP</span></div>
         <b>🔥 ${state.streak}</b>
       </header>
       <article class="quiz-card">
-        <div class="tag-row">${card.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
-        <h1>${card.question}</h1>
+        <div class="tag-row">${card.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
+        <h1>${escapeHtml(card.question)}</h1>
         ${renderAnswerInput(card, options)}
         ${state.showResult ? renderResult(card) : ''}
       </article>
@@ -682,7 +646,7 @@ function renderEditor() {
 
 function bindEvents() {
   document.querySelectorAll('[data-tab]').forEach((button) => {
-    button.addEventListener('click', () => setState({ tab: button.dataset.tab, showResult: false, addSheetOpen: false }));
+    button.addEventListener('click', () => setState({ tab: button.dataset.tab, showResult: false, addSheetOpen: false, historySheetOpen: false, message: '' }));
   });
   document.querySelectorAll('[data-mode]').forEach((button) => {
     button.addEventListener('click', () => setState({ mode: button.dataset.mode, showResult: false }));
@@ -697,13 +661,16 @@ function bindEvents() {
     button.addEventListener('click', () => setState({ createType: button.dataset.createType }));
   });
   document.querySelectorAll('[data-select-source]').forEach((button) => {
-    button.addEventListener('click', () => setState({ selectedSource: button.dataset.selectSource }));
+    button.addEventListener('click', () => setState({ selectedSource: button.dataset.selectSource, message: '' }));
   });
   document.querySelectorAll('[data-open-source]').forEach((button) => {
-    button.addEventListener('click', () => setState({ selectedSource: button.dataset.openSource, createType: 'cards', tab: 'add', addSheetOpen: false }));
+    button.addEventListener('click', () => setState({ selectedSource: button.dataset.openSource, createType: 'cards', tab: 'add', addSheetOpen: false, historySheetOpen: false, message: '' }));
   });
-  document.querySelectorAll('[data-subject]').forEach((button) => {
-    button.addEventListener('click', () => setState({ activeSubject: button.dataset.subject, subjectSheetOpen: false, subjectQuery: '' }));
+  document.querySelectorAll('[data-history-id]').forEach((button) => {
+    button.addEventListener('click', () => openHistoryItem(button.dataset.historyId, button.dataset.historyKind));
+  });
+  document.querySelectorAll('[data-deck-title]').forEach((button) => {
+    button.addEventListener('click', () => openDeck(button.dataset.deckTitle));
   });
   document.querySelectorAll('[data-edit]').forEach((button) => {
     button.addEventListener('click', () => setState({ editingCardId: button.dataset.edit }));
@@ -727,8 +694,8 @@ function bindEvents() {
   if (noteBody) noteBody.addEventListener('input', (event) => (state.noteBody = event.target.value));
   const answerInput = document.querySelector('#answerInput');
   if (answerInput) answerInput.addEventListener('input', (event) => (state.answerDraft = event.target.value));
-  const subjectSearch = document.querySelector('#subjectSearch');
-  if (subjectSearch) subjectSearch.addEventListener('input', (event) => setState({ subjectQuery: event.target.value }));
+  const historySearch = document.querySelector('#historySearch');
+  if (historySearch) historySearch.addEventListener('input', (event) => setState({ historyQuery: event.target.value }));
   const fileInput = document.querySelector('#fileInput');
   if (fileInput) fileInput.addEventListener('change', handleFileImport);
   const photoInput = document.querySelector('#photoInput');
@@ -736,12 +703,13 @@ function bindEvents() {
 }
 
 function handleAction(action) {
-  if (action === 'toggle-add-sheet') setState({ addSheetOpen: !state.addSheetOpen, subjectSheetOpen: false });
-  if (action === 'open-subject-sheet') setState({ subjectSheetOpen: true, addSheetOpen: false });
-  if (action === 'close-subject-sheet') setState({ subjectSheetOpen: false, subjectQuery: '' });
-  if (action === 'continue-create') setState({ tab: 'add', addSheetOpen: false });
+  if (action === 'toggle-add-sheet') setState({ addSheetOpen: !state.addSheetOpen, historySheetOpen: false, message: '' });
+  if (action === 'open-history') setState({ historySheetOpen: true, addSheetOpen: false, historyQuery: '', message: '' });
+  if (action === 'close-history') setState({ historySheetOpen: false, historyQuery: '' });
+  if (action === 'continue-create') setState({ tab: 'add', addSheetOpen: false, message: '' });
   if (action === 'generate') createCardsFromCurrentSource();
   if (action === 'save-note') saveNote();
+  if (action === 'start-quiz') setState({ tab: 'quiz' });
   if (action === 'submit-choice') {
     const card = currentCard();
     setState({ showResult: true, lastCorrect: state.selectedOption === card.answer });
@@ -765,17 +733,35 @@ function handleAction(action) {
 
 function createCardsFromCurrentSource() {
   const sourceText = buildSourceText();
-  const deckTitle = `${state.activeSubject} ${sourceLabel(state.selectedSource)}`;
-  const cards = generateCardsFromText(sourceText, deckTitle);
+  if (!sourceText.trim()) {
+    setState({ message: '请先输入、粘贴或上传真实学习资料。' });
+    return;
+  }
+  const now = Date.now();
+  const title = buildDocumentTitle(sourceText);
+  const generated = generateCardsFromText(sourceText, title);
+  const document = {
+    id: `doc_${now}`,
+    kind: 'document',
+    sourceType: state.selectedSource,
+    title,
+    body: sourceText,
+    cardIds: generated.map((card) => card.id),
+    createdAt: now
+  };
   setState({
-    cards: [...cards, ...state.cards],
-    importText: state.importText,
+    cards: [...generated, ...state.cards],
+    sourceDocuments: [document, ...state.sourceDocuments],
+    importText: '',
+    urlDraft: '',
     tab: 'quiz',
     quizIndex: 0,
     showResult: false,
     xp: state.xp + 20,
+    level: levelForXp(state.xp + 20),
     materialName: '',
-    photoDraft: null
+    photoDraft: null,
+    message: ''
   });
 }
 
@@ -783,35 +769,58 @@ function buildSourceText() {
   const text = document.querySelector('#importText')?.value || state.importText || '';
   if (state.selectedSource === 'video') {
     const url = document.querySelector('#urlInput')?.value || state.urlDraft || '';
-    return `视频资料：${url || '未命名视频'}。${text || '请根据视频笔记生成复习卡片。'}`;
+    if (!url && !text) return '';
+    return [url ? `视频链接：${url}` : '', text].filter(Boolean).join('。');
   }
   if (state.selectedSource === 'photo') {
-    return `图片资料：${state.photoDraft?.name || '拍照资料'}。${text || '请补充图片中的关键文字和知识点。'}`;
+    if (!state.photoDraft && !text) return '';
+    return [`图片资料：${state.photoDraft?.name || '未命名图片'}`, text].filter(Boolean).join('。');
   }
-  return text || seedText;
+  return text;
 }
 
-function sourceLabel(source) {
-  return { file: '上传资料', photo: '拍照资料', paste: '粘贴资料', video: '视频资料' }[source] || '学习资料';
+function buildDocumentTitle(text) {
+  if (state.materialName) return state.materialName.replace(/\.[^.]+$/, '');
+  if (state.urlDraft) return shortText(state.urlDraft.replace(/^https?:\/\//, ''), 24);
+  const firstLine = text.split(/[。！？.!?\n]/).find((line) => line.trim().length > 0) || '未命名资料';
+  return shortText(firstLine, 18);
 }
 
 function saveNote() {
-  const title = document.querySelector('#noteTitle')?.value || state.noteTitle || `${state.activeSubject} note`;
-  const body = document.querySelector('#noteBody')?.value || state.noteBody || state.importText;
+  const title = document.querySelector('#noteTitle')?.value || state.noteTitle;
+  const body = document.querySelector('#noteBody')?.value || state.noteBody;
+  if (!title.trim() && !body.trim()) {
+    setState({ message: '请先填写笔记标题或内容。' });
+    return;
+  }
+  const now = Date.now();
   const note = {
-    id: `note_${Date.now()}`,
-    title,
+    id: `note_${now}`,
+    title: title.trim() || shortText(body, 18),
     body,
-    subject: state.activeSubject,
-    createdAt: Date.now(),
+    createdAt: now,
     image: state.photoDraft?.image || ''
   };
   setState({
     notes: [note, ...state.notes],
+    sourceDocuments: [
+      {
+        id: `doc_note_${now}`,
+        kind: 'note',
+        sourceType: 'notes',
+        title: note.title,
+        body: note.body,
+        noteId: note.id,
+        createdAt: now
+      },
+      ...state.sourceDocuments
+    ],
     noteTitle: '',
     noteBody: '',
     tab: 'home',
-    xp: state.xp + 5
+    xp: state.xp + 5,
+    level: levelForXp(state.xp + 5),
+    message: ''
   });
 }
 
@@ -819,7 +828,7 @@ function handleFileImport(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => setState({ importText: String(reader.result || ''), selectedSource: 'file', materialName: file.name, tab: 'add' });
+  reader.onload = () => setState({ importText: String(reader.result || ''), selectedSource: 'file', materialName: file.name, tab: 'add', message: '' });
   reader.readAsText(file, 'utf-8');
 }
 
@@ -831,9 +840,54 @@ function handlePhotoImport(event) {
     setState({
       selectedSource: 'photo',
       photoDraft: { name: file.name, image: String(reader.result || '') },
-      importText: state.importText || `图片资料：${file.name}`
+      message: '图片已保存预览。请补充图片文字后生成卡片；自动 OCR 需要云服务。'
     });
   reader.readAsDataURL(file);
+}
+
+function historyResults(query = state.historyQuery) {
+  const needle = query.trim().toLowerCase();
+  const documents = state.sourceDocuments.map((doc) => ({
+    id: doc.id,
+    kind: doc.kind || 'document',
+    icon: doc.kind === 'note' ? '✎' : '▱',
+    title: doc.title,
+    meta: `${sourceTypeLabel(doc.sourceType)} · ${shortText(doc.body || '', 36)}`,
+    body: doc.body || '',
+    createdAt: doc.createdAt
+  }));
+  const attempts = state.attempts.map((attempt) => ({
+    id: attempt.id,
+    kind: 'attempt',
+    icon: attempt.correct ? '✓' : '↻',
+    title: attempt.title,
+    meta: attempt.correct ? '答对记录' : '复习记录',
+    body: attempt.title,
+    createdAt: attempt.createdAt
+  }));
+  return [...documents, ...attempts]
+    .filter((item) => !needle || `${item.title} ${item.meta} ${item.body}`.toLowerCase().includes(needle))
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+function openHistoryItem(id, kind) {
+  if (kind === 'attempt') {
+    setState({ tab: 'progress', historySheetOpen: false });
+    return;
+  }
+  const document = state.sourceDocuments.find((item) => item.id === id);
+  if (!document) return;
+  if (document.kind === 'note') {
+    setState({ tab: 'decks', deckTab: 'my', historySheetOpen: false });
+    return;
+  }
+  const firstCardIndex = state.cards.findIndex((card) => document.cardIds?.includes(card.id));
+  setState({ tab: 'quiz', quizIndex: Math.max(0, firstCardIndex), historySheetOpen: false, showResult: false });
+}
+
+function openDeck(title) {
+  const index = state.cards.findIndex((card) => card.deckTitle === title);
+  setState({ tab: 'quiz', quizIndex: Math.max(0, index), showResult: false });
 }
 
 function currentCard() {
@@ -844,17 +898,43 @@ function currentCard() {
 
 function applyRating(rating) {
   const card = currentCard();
+  const correct = rating >= 3;
   const updated = scheduleCard(card, rating);
+  const xp = correct ? 10 : 3;
+  const now = Date.now();
+  const nextXp = state.xp + xp;
+  const nextStreak = correct ? updateStreak(now) : state.streak;
   setState({
     cards: state.cards.map((item) => (item.id === card.id ? updated : item)),
+    attempts: [
+      {
+        id: `attempt_${now}`,
+        cardId: card.id,
+        title: card.question,
+        correct,
+        rating,
+        xp,
+        createdAt: now
+      },
+      ...state.attempts
+    ],
     quizIndex: state.quizIndex + 1,
     answerDraft: '',
     selectedOption: '',
     showResult: false,
     lastCorrect: null,
-    xp: state.xp + (rating >= 3 ? 10 : 3),
-    streak: rating >= 3 ? state.streak + 1 : state.streak
+    xp: nextXp,
+    level: levelForXp(nextXp),
+    streak: nextStreak,
+    lastStudyDate: dateKey(now)
   });
+}
+
+function updateStreak(now) {
+  const today = dateKey(now);
+  if (state.lastStudyDate === today) return state.streak;
+  const yesterday = dateKey(now - 24 * 60 * 60 * 1000);
+  return state.lastStudyDate === yesterday ? state.streak + 1 : 1;
 }
 
 function saveEditedCard() {
@@ -896,8 +976,37 @@ function deckGroups() {
   return [...groups.entries()].map(([title, count], index) => ({ title, count, color: colors[index % colors.length] }));
 }
 
+function calendarDays() {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(now.getDate() - 8);
+  return Array.from({ length: 14 }, (_, index) => {
+    const day = new Date(start);
+    day.setDate(start.getDate() + index);
+    return { label: day.getDate(), key: dateKey(day.getTime()), today: dateKey(day.getTime()) === dateKey(Date.now()) };
+  });
+}
+
 function masteryCount() {
   return state.cards.filter((card) => card.stability >= 3).length;
+}
+
+function levelForXp(xp) {
+  return Math.max(1, Math.floor(xp / 100) + 1);
+}
+
+function sourceTypeLabel(type) {
+  return { file: '文件', photo: '照片', paste: '粘贴', video: '视频', notes: 'Notes' }[type] || '资料';
+}
+
+function formatDate(time) {
+  if (!time) return '';
+  return new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(time));
+}
+
+function dateKey(time) {
+  const date = new Date(time);
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
 function shortText(text, length) {

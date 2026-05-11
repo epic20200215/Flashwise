@@ -7,7 +7,7 @@ export function uid(prefix = 'id') {
 }
 
 export function splitIntoChunks(text) {
-  return text
+  return String(text || '')
     .replace(/\s+/g, ' ')
     .split(/(?<=[。！？.!?；;])\s*/)
     .map((item) => item.trim())
@@ -25,7 +25,7 @@ export function keywordOf(sentence) {
 }
 
 export function generateCardsFromText(text, title = '智能导入卡组') {
-  const chunks = splitIntoChunks(text || seedText);
+  const chunks = splitIntoChunks(text);
   const now = Date.now();
   return chunks.map((chunk, index) => {
     const keyword = keywordOf(chunk);
@@ -72,7 +72,7 @@ export function makeOptions(card, allCards) {
     .filter((item) => item.id !== card.id)
     .map((item) => item.answer)
     .filter(Boolean);
-  const fallback = ['主动回忆', '间隔重复', '来源片段', '复习计划', '学习小组'];
+  const fallback = ['不符合原文', '无法从材料判断', '另一个知识点', '以上都不是'];
   const unique = [...new Set([...distractors, ...fallback])].filter((item) => item !== card.answer);
   const options = shuffle([card.answer, ...unique.slice(0, 3)]);
   return options;

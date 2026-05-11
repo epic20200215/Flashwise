@@ -18,8 +18,8 @@
 | 再次对比 Gizmo | `docs/product-plan.md` 新增“V2 优化：再次对比 Gizmo 后的产品决策”，明确 Gizmo 优势、用户批评和闪学升级策略 |
 | 优化产品策划方案 | `docs/product-plan.md`、`docs/prd.md`、`docs/design-system.md`、`docs/ai-learning-engine.md`、`docs/compliance-mainland-china.md` |
 | 开发可运行 App | `index.html`、`src/app.js`、`src/core.js`、`src/styles.css`、`manifest.webmanifest`、`service-worker.js` |
-| App 核心学习闭环 | 今日复习、智能导入、文本文件读取、模拟 AI 制卡、来源追溯、选择/填空/翻卡、FSRS 风格调度、卡片编辑删除、CSV 导出、小组学习、本地数据与未成年人模式 |
-| 使用图片素材 | `src/app.js` 引用 `images/icon.png`、`images/ip_ocki.png`、`images/profilepicture-female.png`、`images/profilepicture-male.png` |
+| App 核心学习闭环 | 今日复习、真实资料导入、文本文件读取、来源追溯、选择/填空/翻卡、FSRS 风格调度、History 搜索、Notes 保存、卡片编辑删除、CSV 导出、本地数据与未成年人模式 |
+| 使用图片素材 | `src/app.js` 引用 `images/ip_ocki.png`；`manifest.webmanifest` 引用 `images/icon.png` |
 | OCKI 只读参考 | `docs/android-packaging.md` 记录可参考 OCKI 的脚本和配置；本项目没有向 `F:\cursor\OCKI` 写入文件 |
 | GitHub 仓库 | 本地 `master` 跟踪 `origin/master`，远程为 `https://github.com/epic20200215/Flashwise` |
 | 构建与测试 | `npm.cmd run verify` 通过：lint、5 个 node:test 单元测试、静态检查、构建 |
@@ -27,7 +27,7 @@
 
 ## 已知边界
 
-- 当前版本是本地优先 PWA，可直接浏览、构建和静态部署；真实账号体系、云端同步、真实 AI 模型调用、支付和应用商店原生包属于下一阶段工程。
+- 当前版本是本地优先 PWA，可直接浏览、构建和静态部署；真实账号体系、云端同步、真实 AI 模型调用、OCR/ASR、公共卡组、社交排行榜、支付和应用商店原生包属于下一阶段工程，需求见 `docs/integration-requirements.md`。
 - Android 原生打包路线已在 `docs/android-packaging.md` 中说明。当前未复制或改写 OCKI 的 Android 工程，以避免破坏用户强调的 OCKI 项目。
 - 浏览器插件当前阻止 `file://`，且未暴露截图/DOM 交互接口；因此采用 HTTP 资源加载与命令级验证。
 
@@ -41,6 +41,4 @@ npm.cmd run verify
 
 ## 最新提交
 
-- `fa1f0ec feat: add card management and file import`
-- `7bbec18 feat: build flashwise pwa mvp`
-
+以 `git log -n 5 --oneline` 为准。
