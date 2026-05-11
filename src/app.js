@@ -99,11 +99,11 @@ function renderOverlays() {
 
 function renderBottomNav() {
   const tabs = [
-    ['home', '🏠', 'Home'],
-    ['progress', '🔥', 'Progress'],
-    ['add', state.addSheetOpen ? '×' : '✚', state.addSheetOpen ? 'Close' : 'Add'],
-    ['decks', '📁', 'Decks'],
-    ['profile', '🐙', 'Profile']
+    ['home', '🏠', '首页'],
+    ['progress', '🔥', '进度'],
+    ['add', state.addSheetOpen ? '×' : '✚', state.addSheetOpen ? '收起' : '新建'],
+    ['decks', '📁', '卡组'],
+    ['profile', '🐙', '我的']
   ];
   return `
     <nav class="bottom-nav" aria-label="主导航">
@@ -130,8 +130,8 @@ function renderHome() {
   return `
     <section class="screen home-screen">
       ${statusBar()}
-      <button class="subject-chip" data-action="open-history">⏱️ History</button>
-      <img class="home-mascot" src="${ipImage}" alt="闪学 IP" />
+      <button class="subject-chip" data-action="open-history">⏱️ 历史</button>
+      <img class="home-mascot" src="${ipImage}" alt="闪学学习助手" />
       <h1 class="home-title">今天学什么？</h1>
       <section class="study-prompt" data-action="toggle-add-sheet">
         <div>
@@ -141,27 +141,27 @@ function renderHome() {
         <b>＋</b>
       </section>
       <div class="upload-grid">
-        ${uploadButton('📁', 'Deck', 'decks')}
-        ${sourceButton('⬆️', 'Upload', 'file')}
-        ${sourceButton('📷', 'Photo', 'photo')}
-        ${sourceButton('🎬', 'Video', 'video')}
-        ${sourceButton('📋', 'Paste', 'paste')}
-        ${sourceButton('⌕', 'History', 'history')}
+        ${uploadButton('📁', '卡组', 'decks')}
+        ${sourceButton('⬆️', '上传', 'file')}
+        ${sourceButton('📷', '拍照', 'photo')}
+        ${sourceButton('🎬', '视频', 'video')}
+        ${sourceButton('📋', '粘贴', 'paste')}
+        ${sourceButton('⌕', '历史', 'history')}
       </div>
       <section class="section-block">
-        <h2>Jump back in</h2>
+        <h2>继续学习</h2>
         ${
           state.cards.length
             ? `<article class="jump-card" data-tab="quiz">
                 <div class="progress-ring">${mastery(state.cards)}%</div>
-                <div><strong>${escapeHtml(groups[0]?.title || '我的卡组')}</strong><span>${due.length || state.cards.length} questions ready</span></div>
+                <div><strong>${escapeHtml(groups[0]?.title || '我的卡组')}</strong><span>${due.length || state.cards.length} 道题待复习</span></div>
               </article>`
-            : renderEmptyCard('还没有学习记录', '上传资料后会生成闪卡、测验和历史记录。', '开始上传', 'toggle-add-sheet')
+            : renderEmptyCard('还没有学习记录', '上传资料后会生成记忆卡、测验和历史记录。', '开始上传', 'toggle-add-sheet')
         }
       </section>
       <section class="section-block">
         <div class="section-row"><h2>我的卡组</h2><button data-action="toggle-add-sheet">＋</button></div>
-        ${groups.length ? groups.map(renderDeckRow).join('') : renderEmptyCard('暂无卡组', 'Cards 创建成功后会出现在这里。', '创建 Cards', 'toggle-add-sheet')}
+        ${groups.length ? groups.map(renderDeckRow).join('') : renderEmptyCard('暂无卡组', '创建记忆卡后会出现在这里。', '创建记忆卡', 'toggle-add-sheet')}
       </section>
       ${state.notes.length ? renderRecentNotes() : ''}
     </section>
@@ -175,18 +175,18 @@ function renderHistorySheet() {
       <section class="bottom-sheet subject-sheet">
         <header class="sheet-header">
           <span></span>
-          <h2>History</h2>
+          <h2>历史记录</h2>
           <button data-action="close-history">×</button>
         </header>
         <label class="search-box">
           <span>⌕</span>
-          <input id="historySearch" value="${escapeAttr(state.historyQuery)}" placeholder="Search" />
+          <input id="historySearch" value="${escapeAttr(state.historyQuery)}" placeholder="搜索资料、笔记或答题记录" />
         </label>
         <div class="history-results">
           ${
             results.length
               ? results.map(renderHistoryResult).join('')
-              : `<div class="history-empty"><strong>没有找到记录</strong><span>你生成过的卡组、保存的 Notes、学习过的资料会出现在这里。</span></div>`
+              : `<div class="history-empty"><strong>没有找到记录</strong><span>你生成过的卡组、保存的笔记、学习过的资料会出现在这里。</span></div>`
           }
         </div>
       </section>
@@ -214,13 +214,13 @@ function renderAddSheet() {
         <button class="sheet-close-float" data-action="toggle-add-sheet">×</button>
         <button class="create-choice ${state.createType === 'cards' ? 'selected' : ''}" data-create-type="cards">
           <span>▱</span>
-          <div><strong>Cards</strong><small>Create flashcards</small></div>
+          <div><strong>记忆卡</strong><small>把资料变成练习题</small></div>
         </button>
         <button class="create-choice ${state.createType === 'notes' ? 'selected' : ''}" data-create-type="notes">
           <span>✎</span>
-          <div><strong>Notes</strong><small>Create freeform notes</small></div>
+          <div><strong>自由笔记</strong><small>先记录，再整理</small></div>
         </button>
-        <button class="dark-cta" data-action="continue-create">Continue</button>
+        <button class="dark-cta" data-action="continue-create">继续</button>
       </section>
     </div>
   `;
@@ -231,7 +231,7 @@ function statusBar() {
   return `
     <div class="status-bar">
       <span>${time}</span>
-      <span>Local PWA</span>
+      <span>本地版</span>
     </div>
   `;
 }
@@ -261,7 +261,7 @@ function renderDeckRow(deck) {
       <i style="background:${deck.color}"></i>
       <div>
         <strong>${escapeHtml(deck.title)}</strong>
-        <span>${deck.count} cards</span>
+        <span>${deck.count} 张卡片</span>
       </div>
       <b>⋮</b>
     </article>
@@ -281,7 +281,7 @@ function renderEmptyCard(title, text, buttonLabel, action) {
 function renderRecentNotes() {
   return `
     <section class="section-block">
-      <div class="section-row"><h2>Notes</h2><button data-tab="add">＋</button></div>
+      <div class="section-row"><h2>笔记</h2><button data-tab="add">＋</button></div>
       ${state.notes.slice(0, 3).map(renderNoteCard).join('')}
     </section>
   `;
@@ -305,38 +305,38 @@ function renderProgress() {
     <section class="screen progress-screen">
       ${statusBar()}
       <header class="level-card">
-        <img src="${ipImage}" alt="闪学 IP" />
+        <img src="${ipImage}" alt="闪学学习助手" />
         <div>
-          <strong>Level ${state.level}</strong>
-          <span>${state.xp} XP</span>
+          <strong>第 ${state.level} 级</strong>
+          <span>${state.xp} 积分</span>
         </div>
-        <b>${state.cards.length} cards</b>
+        <b>${state.cards.length} 张卡片</b>
       </header>
       <section class="section-block">
-        <h2>Start your streak!</h2>
+        <h2>开始今日学习</h2>
         <article class="streak-card">
           <div>🔥</div>
-          <strong>${state.streak} day streak</strong>
-          <span>${state.cards.length ? `${dueCards(state.cards).length || state.cards.length} questions available` : 'Create cards to start'}</span>
+          <strong>已连续学习 ${state.streak} 天</strong>
+          <span>${state.cards.length ? `${dueCards(state.cards).length || state.cards.length} 道题可以复习` : '先创建一组记忆卡'}</span>
         </article>
-        <div class="calendar-row">${['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => `<b>${day}</b>`).join('')}</div>
+        <div class="calendar-row">${['日', '一', '二', '三', '四', '五', '六'].map((day) => `<b>${day}</b>`).join('')}</div>
         <div class="calendar-grid">${calendarDays().map((day) => `<span class="${studiedDates.has(day.key) ? 'studied' : ''} ${day.today ? 'today' : ''}">${day.label}</span>`).join('')}</div>
-        <button class="dark-cta" data-tab="${state.cards.length ? 'quiz' : 'add'}">🎮 ${state.cards.length ? 'Start streak' : 'Create cards'}</button>
+        <button class="dark-cta" data-tab="${state.cards.length ? 'quiz' : 'add'}">🎮 ${state.cards.length ? '开始复习' : '创建记忆卡'}</button>
       </section>
       <section class="section-block">
-        <h2>Deck progress</h2>
+        <h2>卡组进度</h2>
         ${
           state.cards.length
-            ? `<article class="jump-card"><div class="progress-ring">${mastery(state.cards)}%</div><div><strong>${masteryCount()} of ${state.cards.length} cards mastered</strong><span>${dueCards(state.cards).length} due now</span></div></article>`
-            : renderEmptyCard('暂无进度', '完成一次资料导入后，这里会显示真实掌握率和复习进度。', '创建 Cards', 'toggle-add-sheet')
+            ? `<article class="jump-card"><div class="progress-ring">${mastery(state.cards)}%</div><div><strong>已掌握 ${masteryCount()} / ${state.cards.length} 张</strong><span>${dueCards(state.cards).length} 张现在需要复习</span></div></article>`
+            : renderEmptyCard('暂无进度', '完成一次资料导入后，这里会显示真实掌握率和复习进度。', '创建记忆卡', 'toggle-add-sheet')
         }
       </section>
       <section class="section-block">
-        <h2>Activity</h2>
+        <h2>学习记录</h2>
         ${state.attempts.length ? state.attempts.slice(0, 8).map(renderAttempt).join('') : renderEmptyCard('没有学习动态', '答题记录会按时间出现在这里。', '开始学习', state.cards.length ? 'start-quiz' : 'toggle-add-sheet')}
       </section>
       <section class="section-block">
-        <h2>Social features</h2>
+        <h2>同伴学习</h2>
         <article class="empty-card locked">
           <strong>好友排行榜和学习小组需要云端账号</strong>
           <span>当前版本不会展示假好友或假排行榜。接入腾讯云、登录和后端后再启用。</span>
@@ -351,8 +351,8 @@ function renderAttempt(attempt) {
   return `
     <article class="activity-row">
       <b>${attempt.correct ? '✓' : '↻'}</b>
-      <div><strong>${escapeHtml(attempt.title)}</strong><span>${formatDate(attempt.createdAt)} · ${attempt.correct ? 'correct' : 'review again'}</span></div>
-      <small>+${attempt.xp} XP</small>
+      <div><strong>${escapeHtml(attempt.title)}</strong><span>${formatDate(attempt.createdAt)} · ${attempt.correct ? '答对' : '需要再复习'}</span></div>
+      <small>+${attempt.xp} 积分</small>
     </article>
   `;
 }
@@ -364,13 +364,13 @@ function renderAdd() {
       ${statusBar()}
       <header class="page-title">
         <button data-tab="home">‹</button>
-        <h1>${isNotes ? 'Create notes' : 'Create flashcards'}</h1>
+        <h1>${isNotes ? '写笔记' : '生成记忆卡'}</h1>
         <button data-action="toggle-add-sheet">＋</button>
       </header>
       <section class="add-hero">
         <div class="plus-orb">${isNotes ? '✎' : '＋'}</div>
         <h2>${isNotes ? '写下自由笔记' : '上传资料，马上开考'}</h2>
-        <p>${isNotes ? 'Notes 会保存到 History，并可作为后续制卡资料。' : 'Cards 会基于你输入或上传的真实资料生成。'}</p>
+        <p>${isNotes ? '笔记会存入历史记录，也可以作为后续制卡资料。' : '记忆卡会基于你输入或上传的真实资料生成。'}</p>
       </section>
       ${state.message ? `<div class="message">${escapeHtml(state.message)}</div>` : ''}
       ${isNotes ? renderNotesComposer() : renderCardsComposer()}
@@ -381,20 +381,20 @@ function renderAdd() {
 function renderCardsComposer() {
   return `
     <div class="source-grid">
-      ${sourceTile('📄', '文件上传', 'TXT / MD / CSV', 'file')}
+      ${sourceTile('📄', '文件上传', '文本 / 文稿 / 表格', 'file')}
       ${sourceTile('📷', '拍照记录', '图片预览 + 手动文字', 'photo')}
       ${sourceTile('📋', '粘贴文本', '课堂笔记 / 讲义', 'paste')}
       ${sourceTile('🎬', '视频链接', '链接 + 字幕笔记', 'video')}
     </div>
     <section class="upload-composer">
       ${renderSourceInput()}
-      <button class="primary-cta" data-action="generate">生成闪卡和测验</button>
+      <button class="primary-cta" data-action="generate">生成记忆卡和测验</button>
     </section>
     <section class="pipeline">
-      <h2>本地已实装</h2>
-      <div><span>1</span><strong>保存资料历史</strong><small>每次生成都会进入 History 搜索</small></div>
+      <h2>已支持的功能</h2>
+      <div><span>1</span><strong>保存资料历史</strong><small>每次生成都会进入历史记录搜索</small></div>
       <div><span>2</span><strong>生成可编辑卡片</strong><small>选择、填空、翻卡都可练习</small></div>
-      <div><span>3</span><strong>真实进度记录</strong><small>XP、streak、到期复习来自你的学习行为</small></div>
+      <div><span>3</span><strong>真实进度记录</strong><small>积分、连续学习天数、到期复习都来自你的学习行为</small></div>
     </section>
   `;
 }
@@ -416,12 +416,12 @@ function renderSourceInput() {
         <input id="photoInput" type="file" accept="image/*" />
       </label>
       ${state.photoDraft?.image ? `<img class="photo-preview" src="${state.photoDraft.image}" alt="${escapeAttr(state.photoDraft.name)}" />` : ''}
-      <textarea id="importText" rows="6" placeholder="请手动补充图片中的文字。真实 OCR 需要接入云服务。">${escapeHtml(state.importText)}</textarea>
+      <textarea id="importText" rows="6" placeholder="请手动补充图片中的文字。自动识别图片文字需要接入云服务。">${escapeHtml(state.importText)}</textarea>
     `;
   }
   if (state.selectedSource === 'video') {
     return `
-      <input id="urlInput" class="answer-input" value="${escapeAttr(state.urlDraft)}" placeholder="粘贴 B 站 / 网课 / YouTube 链接" />
+      <input id="urlInput" class="answer-input" value="${escapeAttr(state.urlDraft)}" placeholder="粘贴网课、哔哩哔哩或课程链接" />
       <textarea id="importText" rows="6" placeholder="请粘贴视频字幕、课件摘要或你整理的笔记。自动转写需要接入云服务。">${escapeHtml(state.importText)}</textarea>
     `;
   }
@@ -434,11 +434,11 @@ function renderNotesComposer() {
   return `
     <section class="upload-composer">
       <input id="noteTitle" class="answer-input" value="${escapeAttr(state.noteTitle)}" placeholder="笔记标题" />
-      <textarea id="noteBody" rows="10" placeholder="写自由笔记，可以稍后复制到 Cards 生成闪卡...">${escapeHtml(state.noteBody)}</textarea>
-      <button class="primary-cta" data-action="save-note">保存 Notes</button>
+      <textarea id="noteBody" rows="10" placeholder="先把想法记下来，稍后也可以整理成记忆卡...">${escapeHtml(state.noteBody)}</textarea>
+      <button class="primary-cta" data-action="save-note">保存笔记</button>
     </section>
     <section class="section-block">
-      <h2>已有 Notes</h2>
+      <h2>已有笔记</h2>
       ${state.notes.length ? state.notes.map(renderNoteCard).join('') : '<p class="empty-copy">还没有笔记，先创建一条。</p>'}
     </section>
   `;
@@ -460,12 +460,12 @@ function renderDecks() {
       ${statusBar()}
       <header class="page-title">
         <span></span>
-        <h1>Decks</h1>
+        <h1>卡组</h1>
         <button data-action="open-history">⌕</button>
       </header>
       <div class="deck-tabs">
-        <button class="${state.deckTab === 'my' ? 'active' : ''}" data-deck-tab="my">My decks</button>
-        <button class="${state.deckTab === 'public' ? 'active' : ''}" data-deck-tab="public">Public decks</button>
+        <button class="${state.deckTab === 'my' ? 'active' : ''}" data-deck-tab="my">我的卡组</button>
+        <button class="${state.deckTab === 'public' ? 'active' : ''}" data-deck-tab="public">公共卡组</button>
       </div>
       ${state.deckTab === 'public' ? renderPublicDecks() : renderMyDecks()}
       <button class="floating-add" data-action="toggle-add-sheet">＋</button>
@@ -477,8 +477,8 @@ function renderMyDecks() {
   const groups = deckGroups();
   return `
     <div class="deck-list">
-      ${groups.length ? groups.map(renderDeckRow).join('') : renderEmptyCard('暂无卡组', '创建 Cards 后会在这里显示真实卡组。', '创建 Cards', 'toggle-add-sheet')}
-      ${state.notes.length ? '<h2 class="deck-subtitle">Notes</h2>' : ''}
+      ${groups.length ? groups.map(renderDeckRow).join('') : renderEmptyCard('暂无卡组', '创建记忆卡后会在这里显示真实卡组。', '创建记忆卡', 'toggle-add-sheet')}
+      ${state.notes.length ? '<h2 class="deck-subtitle">笔记</h2>' : ''}
       ${state.notes.map(renderNoteCard).join('')}
     </div>
   `;
@@ -502,29 +502,29 @@ function renderProfile() {
       ${statusBar()}
       <header class="page-title">
         <button data-tab="home">‹</button>
-        <h1>Local profile</h1>
+        <h1>我的</h1>
         <span></span>
       </header>
       <section class="avatar-edit">
         <img src="${ipImage}" alt="闪学头像" />
       </section>
       <section class="settings-card">
-        ${settingRow('👤', 'Account', '未登录，本地模式')}
-        ${settingRow('📚', 'Cards', `${state.cards.length}`)}
-        ${settingRow('📝', 'Notes', `${state.notes.length}`)}
-        ${settingRow('🕘', 'History', `${historyResults('').length}`)}
+        ${settingRow('👤', '账号', '未登录，本地模式')}
+        ${settingRow('📚', '记忆卡', `${state.cards.length}`)}
+        ${settingRow('📝', '笔记', `${state.notes.length}`)}
+        ${settingRow('🕘', '历史记录', `${historyResults('').length}`)}
       </section>
       <section class="privacy-row">
-        <span>🔒 Private profile</span>
+        <span>🔒 仅自己可见</span>
         <label><input type="checkbox" data-action="minor" ${state.minorMode ? 'checked' : ''} /><i></i></label>
       </section>
       <section class="settings-card">
         ${settingRow('☁️', '云端同步', '未配置')}
         ${settingRow('🤖', '大模型生成', '未配置，当前为本地规则生成')}
-        ${settingRow('🧾', 'OCR / ASR', '未配置，需云服务')}
+        ${settingRow('🧾', '拍照识别 / 语音转写', '未配置，需云服务')}
       </section>
       <div class="profile-actions">
-        <button class="outline-wide" data-action="export">导出 CSV</button>
+        <button class="outline-wide" data-action="export">导出表格</button>
         <button class="outline-wide danger" data-action="reset">清空本地数据</button>
       </div>
     </section>
@@ -549,7 +549,7 @@ function renderQuiz() {
     return `
       <section class="screen quiz-screen">
         ${statusBar()}
-        ${renderEmptyCard('还没有卡片', '先上传资料或保存笔记，再开始测验。', '创建 Cards', 'toggle-add-sheet')}
+        ${renderEmptyCard('还没有卡片', '先上传资料或保存笔记，再开始测验。', '创建记忆卡', 'toggle-add-sheet')}
       </section>
     `;
   }
@@ -559,7 +559,7 @@ function renderQuiz() {
       ${statusBar()}
       <header class="quiz-header">
         <button data-tab="home">‹</button>
-        <div><strong>${state.quizIndex + 1}/${cards.length}</strong><span>+10 XP</span></div>
+        <div><strong>${state.quizIndex + 1}/${cards.length}</strong><span>+10 积分</span></div>
         <b>🔥 ${state.streak}</b>
       </header>
       <article class="quiz-card">
@@ -588,30 +588,30 @@ function renderAnswerInput(card, options) {
       <div class="options">
         ${options.map((option) => `<button class="${state.selectedOption === option ? 'selected' : ''}" data-option="${escapeAttr(option)}">${escapeHtml(option)}</button>`).join('')}
       </div>
-      <button class="primary-cta" data-action="submit-choice">Check answer</button>
+      <button class="primary-cta" data-action="submit-choice">查看答案</button>
     `;
   }
   if (state.mode === 'type') {
     return `
       <input id="answerInput" class="answer-input" value="${escapeAttr(state.answerDraft)}" placeholder="输入你回忆出的答案" />
-      <button class="primary-cta" data-action="submit-type">Check answer</button>
+      <button class="primary-cta" data-action="submit-type">查看答案</button>
     `;
   }
-  return `<button class="primary-cta" data-action="reveal">Reveal answer</button>`;
+  return `<button class="primary-cta" data-action="reveal">查看答案</button>`;
 }
 
 function renderResult(card) {
   return `
     <div class="result ${state.lastCorrect ? 'correct' : 'wrong'}">
-      <strong>${state.lastCorrect ? 'Correct!' : 'Try again'}</strong>
+      <strong>${state.lastCorrect ? '答对了' : '再想想'}</strong>
       <p>答案：${escapeHtml(card.answer)}</p>
       <blockquote>${escapeHtml(card.source)}</blockquote>
       <p>${escapeHtml(card.explanation)}</p>
       <div class="rating-row">
-        <button data-rating="1">Again</button>
-        <button data-rating="2">Hard</button>
-        <button data-rating="3">Good</button>
-        <button data-rating="4">Easy</button>
+        <button data-rating="1">仍不会</button>
+        <button data-rating="2">有点难</button>
+        <button data-rating="3">记住了</button>
+        <button data-rating="4">很轻松</button>
       </div>
     </div>
   `;
@@ -840,7 +840,7 @@ function handlePhotoImport(event) {
     setState({
       selectedSource: 'photo',
       photoDraft: { name: file.name, image: String(reader.result || '') },
-      message: '图片已保存预览。请补充图片文字后生成卡片；自动 OCR 需要云服务。'
+      message: '图片已保存预览。请补充图片文字后生成卡片；自动识别图片文字需要云服务。'
     });
   reader.readAsDataURL(file);
 }
@@ -961,7 +961,7 @@ function downloadCsv() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'flashwise-cards.csv';
+  link.download = '闪学卡片.csv';
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -996,7 +996,7 @@ function levelForXp(xp) {
 }
 
 function sourceTypeLabel(type) {
-  return { file: '文件', photo: '照片', paste: '粘贴', video: '视频', notes: 'Notes' }[type] || '资料';
+  return { file: '文件', photo: '照片', paste: '粘贴', video: '视频', notes: '笔记' }[type] || '资料';
 }
 
 function formatDate(time) {

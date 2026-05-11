@@ -8,23 +8,23 @@
 2. 重新优化闪学，缩小与 Gizmo 的产品设计差距。
 3. 明确突出最重要的“上传资料”。
 4. 明确突出游戏化设计。
-5. UI 必须做成手机端竖版 App，而不是 Web 端页面。
+5. 界面必须做成手机端竖版应用，而不是网页端面板。
 
 ## 证据清单
 
 | 要求 | 证据 |
 | --- | --- |
-| 分析 Gizmo 截图 | `docs/research/gizmo-screenshot-analysis.md` 已逐页分析 Home、Decks、Progress、Profile |
-| 参考视频素材 | `docs/research/gizmo video.mp4` 已确认存在，并通过本地 HTML 播放页截取首帧核对 Home 上传入口和底部导航 |
-| 新增 History 截图 | `docs/research/history.jpg` 已按用户说明修正；`History` 是用户历史资料搜索 bottom sheet，不是课程/学科选择器 |
-| 新增 Add 截图 | `docs/research/add.jpg` 已分析；Add 被修正为 Cards / Notes 创建类型 bottom sheet |
-| 上传资料突出 | `src/app.js` 的 Home 首屏有“今天学什么？”、学习输入卡、卡组/上传/拍照/粘贴/视频/更多按钮；Add 页有“上传资料，马上开考”和文件/拍照/粘贴/视频入口 |
-| 游戏化突出 | `src/app.js` 的 Progress 页包含真实 Level、XP、streak、日历、Start streak、Deck progress 和答题 Activity；排行榜/学习小组仅在云端账号接入后启用 |
-| 竖版手机 App | `src/styles.css` 使用 `width: min(100vw, 430px)`、`max-height: 100vh`、固定底部导航和手机视口布局 |
-| Gizmo 式导航 | `src/app.js` 底部导航为 Home / Progress / Add / Decks / Profile，Add 位于中间 |
-| 功能实装 | `src/app.js` 已实现 History 搜索真实资料/Notes/答题记录、Cards/Notes 创建选择、文本文件读取、照片导入预览、视频链接输入、粘贴文本生成卡片、Notes 保存、卡片测验、编辑、删除、导出 |
-| Decks 对齐 | `src/app.js` Decks 页有 My decks / Public decks、真实本地卡组/Notes、公共卡组未配置空状态和悬浮加号 |
-| Profile 对齐 | `src/app.js` Profile 页有居中标题、头像编辑、分组设置卡片和隐私开关 |
+| 分析 Gizmo 截图 | `docs/research/gizmo-screenshot-analysis.md` 已逐页分析首页、卡组、进度、个人页 |
+| 参考视频素材 | `docs/research/gizmo video.mp4` 已确认存在，并通过本地播放页截取首帧核对首页上传入口和底部导航 |
+| 新增历史记录截图 | `docs/research/history.jpg` 已按用户说明修正；“历史记录”是用户历史资料搜索弹层，不是课程/学科选择器 |
+| 新增新建截图 | `docs/research/add.jpg` 已分析；新建入口被修正为“记忆卡 / 自由笔记”创建类型弹层 |
+| 上传资料突出 | `src/app.js` 的首页首屏有“今天学什么？”、学习输入卡、卡组/上传/拍照/粘贴/视频/历史按钮；新建页有“上传资料，马上开考”和文件/拍照/粘贴/视频入口 |
+| 游戏化突出 | `src/app.js` 的进度页包含真实等级、积分、连续学习天数、日历、开始复习、卡组进度和答题记录；排行榜/学习小组仅在云端账号接入后启用 |
+| 竖版手机应用 | `src/styles.css` 使用手机宽度、固定底部导航和手机视口布局 |
+| Gizmo 式导航 | `src/app.js` 底部导航为 首页 / 进度 / 新建 / 卡组 / 我的，新建位于中间 |
+| 功能实装 | `src/app.js` 已实现历史记录搜索真实资料/笔记/答题记录、记忆卡/自由笔记创建选择、文本文件读取、照片导入预览、视频链接输入、粘贴文本生成卡片、笔记保存、卡片测验、编辑、删除、导出 |
+| 卡组对齐 | `src/app.js` 卡组页有 我的卡组 / 公共卡组、真实本地卡组/笔记、公共卡组未配置空状态和悬浮加号 |
+| 我的页对齐 | `src/app.js` 个人页有居中标题、头像、分组设置卡片和隐私开关 |
 
 ## 验证命令
 
@@ -36,10 +36,10 @@ npm.cmd run verify
 
 ## 本地运行验证
 
-- `http://localhost:4173/src/app.js` 返回 200，包含 `上传资料，马上开考` 和 `Start your streak!`。
+- `http://localhost:4173/src/app.js` 返回 200，包含 `上传资料，马上开考` 和 `开始今日学习`。
 - `http://localhost:4173/src/styles.css` 返回 200，包含 `.bottom-nav`、`.add-tab` 和手机竖版 shell。
 - 内置浏览器已打开 `http://localhost:4173/` 并设置为 `393 x 852` 手机视口。
-- 浏览器实测：点击 `History` 会出现历史记录搜索 sheet；点击 `Add` 会出现 Cards / Notes sheet；Cards Continue 后可生成卡片并进入 Quiz；Notes Continue 后可进入笔记编辑页。
+- 浏览器实测：点击“历史”会出现历史记录搜索弹层；点击“新建”会出现记忆卡/自由笔记弹层；选择记忆卡后可生成卡片并进入测验；选择自由笔记后可进入笔记编辑页。
 
 ## 版权与素材处理
 

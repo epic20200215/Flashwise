@@ -1,6 +1,6 @@
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
-export const seedText = `间隔重复是一种根据遗忘曲线安排复习的学习方法。主动回忆要求学习者先尝试从记忆中提取答案，而不是直接重读材料。生成式人工智能可以把笔记、课件和讲义转化为闪卡，但学习产品必须保留来源片段，避免编造。中国大陆上线 AI 教育产品时，需要关注未成年人保护、个人信息保护、算法推荐和生成式人工智能服务规则。`;
+export const seedText = `间隔重复是一种根据遗忘曲线安排复习的学习方法。主动回忆要求学习者先尝试从记忆中提取答案，而不是直接重读材料。生成式人工智能可以把笔记、课件和讲义转化为记忆卡，但学习产品必须保留来源片段，避免编造。中国大陆上线大模型教育产品时，需要关注未成年人保护、个人信息保护、算法推荐和生成式人工智能服务规则。`;
 
 export function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`;
@@ -60,7 +60,7 @@ export function buildQuestion(chunk, keyword) {
 
 export function inferTags(text) {
   const tags = [];
-  if (/AI|人工智能|生成式/.test(text)) tags.push('AI');
+  if (/AI|人工智能|生成式|大模型/.test(text)) tags.push('人工智能');
   if (/间隔|遗忘|记忆|复习|主动回忆/.test(text)) tags.push('记忆法');
   if (/中国|大陆|未成年人|算法|个人信息|合规/.test(text)) tags.push('合规');
   if (tags.length === 0) tags.push('知识点');
@@ -129,7 +129,7 @@ export function dueCards(cards, now = Date.now()) {
 }
 
 export function exportCsv(cards) {
-  const header = ['question', 'answer', 'source', 'tags'];
+  const header = ['题干', '答案', '来源', '标签'];
   const rows = cards.map((card) =>
     [card.question, card.answer, card.source, card.tags.join('|')]
       .map((field) => `"${String(field).replace(/"/g, '""')}"`)

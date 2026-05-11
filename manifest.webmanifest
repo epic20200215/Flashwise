@@ -1,7 +1,7 @@
 {
-  "name": "闪学 Flashwise",
+  "name": "闪学",
   "short_name": "闪学",
-  "description": "AI 闪卡、测验和间隔重复学习工具",
+  "description": "记忆卡、测验和间隔重复学习工具",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f7fbff",

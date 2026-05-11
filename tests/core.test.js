@@ -45,6 +45,6 @@ test('calculates due cards and mastery', () => {
 
 test('exports csv', () => {
   const csv = exportCsv(generateCardsFromText(seedText).slice(0, 2));
-  assert.ok(csv.startsWith('question,answer,source,tags'));
+  assert.ok(csv.startsWith('题干,答案,来源,标签'));
   assert.ok(csv.includes('\n'));
 });
