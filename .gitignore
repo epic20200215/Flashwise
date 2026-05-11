@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.playwright-mcp/
+.flashwise-dev*.log
+.DS_Store
+Thumbs.db
+*.tmp
+*.local

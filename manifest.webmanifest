@@ -1,0 +1,23 @@
+{
+  "name": "闪学 Flashwise",
+  "short_name": "闪学",
+  "description": "AI 闪卡、测验和间隔重复学习工具",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7fbff",
+  "theme_color": "#2f80ed",
+  "icons": [
+    {
+      "src": "./images/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./images/ip_ocki.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
