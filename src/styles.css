@@ -1455,25 +1455,28 @@ textarea,
 
 @media (max-width: 700px) {
   .preview-workbench {
-    display: block;
-    padding: 0;
-    background: var(--bg);
+    gap: 10px;
+    padding: 10px;
   }
 
   .preview-toolbar {
-    display: none;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    border-radius: 20px;
   }
 
-  .device-stage {
-    display: block;
-    padding: 0;
-    overflow: visible;
+  .preview-options {
+    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .preview-options button {
+    min-width: 0;
+    padding: 8px 10px;
   }
 
   .app-shell {
-    width: 100vw;
-    height: 100vh;
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 28px;
   }
 }
