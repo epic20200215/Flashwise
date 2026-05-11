@@ -11,8 +11,16 @@ import {
 const storageKey = 'flashwise-state-v4';
 const ipImage = './images/ip_ocki.png';
 
+const previewDevices = [
+  { key: 'compact', label: '紧凑屏', size: '360 × 740', width: 360, height: 740 },
+  { key: 'standard', label: '标准屏', size: '393 × 852', width: 393, height: 852 },
+  { key: 'large', label: '大屏', size: '430 × 932', width: 430, height: 932 },
+  { key: 'tall', label: '长屏', size: '412 × 915', width: 412, height: 915 }
+];
+
 const defaultState = {
   tab: 'home',
+  previewDevice: 'standard',
   deckTab: 'my',
   mode: 'choice',
   historySheetOpen: false,
@@ -74,14 +82,47 @@ function setState(patch) {
 }
 
 function render() {
+  const device = currentPreviewDevice();
   document.querySelector('#app').innerHTML = `
-    <main class="app-shell">
-      ${renderScreen()}
-      ${renderOverlays()}
-      ${renderBottomNav()}
-    </main>
+    <div class="preview-workbench" style="--device-w:${device.width}px; --device-h:${device.height}px">
+      ${renderPreviewToolbar(device)}
+      <div class="device-stage">
+        <main class="app-shell" aria-label="手机界面预览">
+          ${renderScreen()}
+          ${renderOverlays()}
+          ${renderBottomNav()}
+        </main>
+      </div>
+    </div>
   `;
   bindEvents();
+}
+
+function currentPreviewDevice() {
+  return previewDevices.find((device) => device.key === state.previewDevice) || previewDevices[1];
+}
+
+function renderPreviewToolbar(activeDevice) {
+  return `
+    <section class="preview-toolbar" aria-label="手机分辨率预览">
+      <div>
+        <strong>手机预览</strong>
+        <span>当前画布：${activeDevice.label} ${activeDevice.size}</span>
+      </div>
+      <div class="preview-options">
+        ${previewDevices
+          .map(
+            (device) => `
+              <button class="${device.key === activeDevice.key ? 'active' : ''}" data-preview-device="${device.key}">
+                <strong>${device.label}</strong>
+                <span>${device.size}</span>
+              </button>
+            `
+          )
+          .join('')}
+      </div>
+    </section>
+  `;
 }
 
 function renderScreen() {
@@ -683,6 +724,9 @@ function bindEvents() {
   });
   document.querySelectorAll('[data-rating]').forEach((button) => {
     button.addEventListener('click', () => applyRating(Number(button.dataset.rating)));
+  });
+  document.querySelectorAll('[data-preview-device]').forEach((button) => {
+    button.addEventListener('click', () => setState({ previewDevice: button.dataset.previewDevice }));
   });
   const importText = document.querySelector('#importText');
   if (importText) importText.addEventListener('input', (event) => (state.importText = event.target.value));
