@@ -2,7 +2,7 @@
 
 更新日期：2026-05-11
 
-素材来源：`docs/research/home.jpg`、`decks-my .jpg`、`decks-public.jpg`、`progress.jpg`、`profile.jpg`、`gizmo video.mp4`。
+素材来源：`docs/research/home.jpg`、`history.jpg`、`add.jpg`、`decks-my .jpg`、`decks-public.jpg`、`progress.jpg`、`profile.jpg`、`gizmo video.mp4`。
 
 说明：当前环境未安装 ffmpeg / ffprobe / moviepy / cv2，但已通过本地 HTML 播放页截取 `gizmo video.mp4` 首帧进行核对。视频首帧与 Home 截图一致，重点仍是“学什么输入框 + Deck / Upload / Photo / YouTube / Paste / More + 底部 Add 导航”。
 
@@ -35,6 +35,40 @@ Gizmo Home 的首屏不是数据看板，而是“学习输入框”：
 - 上传资料入口前置到首屏。
 - 上传按钮矩阵包含“卡组 / 上传 / 拍照 / 粘贴 / 视频 / 更多”。
 - “继续学习”只作为次级回流，不抢上传入口。
+
+## 2.1 History 不是历史内容页
+
+新增 `history.jpg` 说明：Home 顶部的 `History` 是当前课程/学科选择入口，不是“历史学习内容”本身。点击后页面背景变暗，从底部弹出一个圆角 bottom sheet：
+
+- sheet 标题是当前课程名 `History`。
+- 右上角是关闭 `X`。
+- 下方是一个 Search 输入框。
+- 这个交互用于切换或搜索课程/学科上下文。
+
+闪学改版对应：
+
+- Home 顶部 chip 改为真正可点击的课程选择器。
+- 点击后弹出课程选择 bottom sheet。
+- 支持搜索课程，并点击切换当前课程。
+- 当前课程会影响新生成卡组的 deck title。
+
+## 2.2 Add 不是普通页面，而是创建类型 sheet
+
+新增 `add.jpg` 说明：底部中间 Add 不是直接跳到上传页面，而是先弹出创建类型 bottom sheet：
+
+- 背景变暗，但 Home 保持可见。
+- sheet 里有两个大选项：`Cards / Create flashcards` 与 `Notes / Create freeform notes`。
+- 选中的选项有蓝色描边。
+- 底部是深色大按钮 `Continue`。
+- 底部导航中间按钮从绿色加号变成白底 `X`。
+
+闪学改版对应：
+
+- Add 按钮先打开 Cards / Notes 选择 sheet。
+- Continue 后进入对应创建流程。
+- Cards 会进入资料导入和闪卡生成。
+- Notes 会进入自由笔记编辑和保存。
+- 两个流程都写入本地数据，不再只是 UI。
 
 ## 3. Decks 页设计要点
 

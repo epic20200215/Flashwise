@@ -16,10 +16,13 @@
 | --- | --- |
 | 分析 Gizmo 截图 | `docs/research/gizmo-screenshot-analysis.md` 已逐页分析 Home、Decks、Progress、Profile |
 | 参考视频素材 | `docs/research/gizmo video.mp4` 已确认存在，并通过本地 HTML 播放页截取首帧核对 Home 上传入口和底部导航 |
+| 新增 History 截图 | `docs/research/history.jpg` 已分析；`History` 被修正为课程/学科选择 bottom sheet，不再当作静态历史学科标签 |
+| 新增 Add 截图 | `docs/research/add.jpg` 已分析；Add 被修正为 Cards / Notes 创建类型 bottom sheet |
 | 上传资料突出 | `src/app.js` 的 Home 首屏有“今天学什么？”、学习输入卡、卡组/上传/拍照/粘贴/视频/更多按钮；Add 页有“上传资料，马上开考”和文件/拍照/粘贴/视频入口 |
 | 游戏化突出 | `src/app.js` 的 Progress 页包含 Level、XP、streak、日历、Start streak、排行榜、学习小组和 Following 动态 |
 | 竖版手机 App | `src/styles.css` 使用 `width: min(100vw, 430px)`、`max-height: 100vh`、固定底部导航和手机视口布局 |
 | Gizmo 式导航 | `src/app.js` 底部导航为 Home / Progress / Add / Decks / Profile，Add 位于中间 |
+| 功能实装 | `src/app.js` 已实现课程搜索/切换、Cards/Notes 创建选择、文本文件读取、照片导入预览、视频链接输入、粘贴文本生成卡片、Notes 保存、卡片测验、编辑、删除、导出 |
 | Decks 对齐 | `src/app.js` Decks 页有 My decks / Public decks、筛选 chip、彩色竖条卡片和悬浮加号 |
 | Profile 对齐 | `src/app.js` Profile 页有居中标题、头像编辑、分组设置卡片和隐私开关 |
 
@@ -36,6 +39,7 @@ npm.cmd run verify
 - `http://localhost:4173/src/app.js` 返回 200，包含 `上传资料，马上开考` 和 `Start your streak!`。
 - `http://localhost:4173/src/styles.css` 返回 200，包含 `.bottom-nav`、`.add-tab` 和手机竖版 shell。
 - 内置浏览器已打开 `http://localhost:4173/` 并设置为 `393 x 852` 手机视口。
+- 浏览器实测：点击 `History` 会出现课程搜索 sheet；点击 `Add` 会出现 Cards / Notes sheet；Cards Continue 后可生成卡片并进入 Quiz；Notes Continue 后可进入笔记编辑页。
 
 ## 版权与素材处理
 
