@@ -4,7 +4,7 @@
 
 素材来源：`docs/research/home.jpg`、`decks-my .jpg`、`decks-public.jpg`、`progress.jpg`、`profile.jpg`、`gizmo video.mp4`。
 
-说明：当前环境无法直接解码 MP4，且未安装 ffmpeg / ffprobe / moviepy / cv2；本轮改版以 5 张截图为直接证据，视频保留为后续人工核对素材。
+说明：当前环境未安装 ffmpeg / ffprobe / moviepy / cv2，但已通过本地 HTML 播放页截取 `gizmo video.mp4` 首帧进行核对。视频首帧与 Home 截图一致，重点仍是“学什么输入框 + Deck / Upload / Photo / YouTube / Paste / More + 底部 Add 导航”。
 
 ## 1. Gizmo 的移动端信息架构
 
@@ -106,4 +106,3 @@ Gizmo 的视觉不是普通 SaaS 风格：
 - 底部 Add 使用绿色大加号。
 - 卡片和按钮使用大圆角、粗字体、轻阴影。
 - Progress 页重点突出火焰、XP、排行榜、好友动态。
-

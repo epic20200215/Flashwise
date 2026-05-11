@@ -15,7 +15,7 @@
 | 要求 | 证据 |
 | --- | --- |
 | 分析 Gizmo 截图 | `docs/research/gizmo-screenshot-analysis.md` 已逐页分析 Home、Decks、Progress、Profile |
-| 参考视频素材 | `docs/research/gizmo video.mp4` 已确认存在；当前环境缺少视频解码工具，因此未臆测视频内容 |
+| 参考视频素材 | `docs/research/gizmo video.mp4` 已确认存在，并通过本地 HTML 播放页截取首帧核对 Home 上传入口和底部导航 |
 | 上传资料突出 | `src/app.js` 的 Home 首屏有“今天学什么？”、学习输入卡、卡组/上传/拍照/粘贴/视频/更多按钮；Add 页有“上传资料，马上开考”和文件/拍照/粘贴/视频入口 |
 | 游戏化突出 | `src/app.js` 的 Progress 页包含 Level、XP、streak、日历、Start streak、排行榜、学习小组和 Following 动态 |
 | 竖版手机 App | `src/styles.css` 使用 `width: min(100vw, 430px)`、`max-height: 100vh`、固定底部导航和手机视口布局 |
@@ -40,4 +40,3 @@ npm.cmd run verify
 ## 版权与素材处理
 
 用户提供的 Gizmo 截图和视频是第三方产品研究素材，只在本地 `docs/research` 目录分析使用，不提交到 GitHub 仓库。
-
