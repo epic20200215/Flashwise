@@ -15,6 +15,7 @@
 - [docs/milestones.md](docs/milestones.md)：开发计划、里程碑与验收口径。
 - [docs/qa-and-launch.md](docs/qa-and-launch.md)：测试、灰度、上线与运营指标。
 - [docs/android-packaging.md](docs/android-packaging.md)：Android 打包路线和 OCKI 可参考文件说明。
+- [docs/completion-audit.md](docs/completion-audit.md)：当前交付完成审计。
 
 ## 当前可运行版本
 
