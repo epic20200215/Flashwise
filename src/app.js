@@ -53,6 +53,7 @@ const defaultState = {
 };
 
 let state = loadState();
+let previewResizeBound = false;
 
 function loadState() {
   try {
@@ -87,15 +88,19 @@ function render() {
     <div class="preview-workbench" style="--device-w:${device.width}px; --device-h:${device.height}px">
       ${renderPreviewToolbar(device)}
       <div class="device-stage">
-        <main class="app-shell" aria-label="手机界面预览">
-          ${renderScreen()}
-          ${renderOverlays()}
-          ${renderBottomNav()}
-        </main>
+        <div class="device-frame">
+          <main class="app-shell" aria-label="手机界面预览">
+            ${renderScreen()}
+            ${renderOverlays()}
+            ${renderBottomNav()}
+          </main>
+        </div>
       </div>
     </div>
   `;
   bindEvents();
+  bindPreviewResize();
+  updatePreviewScale();
 }
 
 function currentPreviewDevice() {
@@ -123,6 +128,24 @@ function renderPreviewToolbar(activeDevice) {
       </div>
     </section>
   `;
+}
+
+function bindPreviewResize() {
+  if (previewResizeBound) return;
+  previewResizeBound = true;
+  window.addEventListener('resize', updatePreviewScale);
+}
+
+function updatePreviewScale() {
+  const frame = document.querySelector('.device-frame');
+  const toolbar = document.querySelector('.preview-toolbar');
+  if (!frame || !toolbar) return;
+  const device = currentPreviewDevice();
+  const toolbarBox = toolbar.getBoundingClientRect();
+  const horizontalSpace = Math.max(280, window.innerWidth - 32);
+  const verticalSpace = Math.max(360, window.innerHeight - toolbarBox.height - 48);
+  const scale = Math.min(1, horizontalSpace / device.width, verticalSpace / device.height);
+  frame.style.setProperty('--preview-scale', String(Math.max(0.38, Math.round(scale * 1000) / 1000)));
 }
 
 function renderScreen() {

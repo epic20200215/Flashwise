@@ -130,9 +130,15 @@ textarea {
 .device-stage {
   min-height: 0;
   display: grid;
-  place-items: start center;
+  place-items: center;
   overflow: auto;
   padding: 4px 0 18px;
+}
+
+.device-frame {
+  --preview-scale: 1;
+  width: calc(var(--device-w) * var(--preview-scale));
+  height: calc(var(--device-h) * var(--preview-scale));
 }
 
 .app-shell {
@@ -143,6 +149,8 @@ textarea {
   border-radius: 34px;
   background: var(--bg);
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 18px 60px rgba(15, 23, 42, 0.18);
+  transform: scale(var(--preview-scale));
+  transform-origin: top left;
 }
 
 .screen {
