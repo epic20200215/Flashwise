@@ -21,6 +21,7 @@ const previewDevices = [
 const defaultState = {
   tab: 'home',
   previewDevice: 'standard',
+  previewToolsOpen: false,
   deckTab: 'my',
   mode: 'choice',
   historySheetOpen: false,
@@ -86,7 +87,7 @@ function render() {
   const device = currentPreviewDevice();
   document.querySelector('#app').innerHTML = `
     <div class="preview-workbench" style="--device-w:${device.width}px; --device-h:${device.height}px">
-      ${renderPreviewToolbar(device)}
+      ${renderPreviewTools(device)}
       <div class="device-stage">
         <div class="device-frame">
           <main class="app-shell" aria-label="手机界面预览">
@@ -107,25 +108,34 @@ function currentPreviewDevice() {
   return previewDevices.find((device) => device.key === state.previewDevice) || previewDevices[1];
 }
 
-function renderPreviewToolbar(activeDevice) {
+function renderPreviewTools(activeDevice) {
   return `
-    <section class="preview-toolbar" aria-label="手机分辨率预览">
-      <div>
-        <strong>手机预览</strong>
-        <span>当前画布：${activeDevice.label} ${activeDevice.size}</span>
-      </div>
-      <div class="preview-options">
-        ${previewDevices
-          .map(
-            (device) => `
-              <button class="${device.key === activeDevice.key ? 'active' : ''}" data-preview-device="${device.key}">
-                <strong>${device.label}</strong>
-                <span>${device.size}</span>
-              </button>
-            `
-          )
-          .join('')}
-      </div>
+    <section class="preview-tools" aria-label="手机分辨率预览">
+      <button class="gm-tool-button ${state.previewToolsOpen ? 'active' : ''}" data-action="toggle-preview-tools" aria-expanded="${state.previewToolsOpen ? 'true' : 'false'}">
+        <span>GM</span>
+      </button>
+      ${
+        state.previewToolsOpen
+          ? `<div class="gm-tool-panel">
+              <header>
+                <strong>手机预览</strong>
+                <span>当前画布：${activeDevice.label} ${activeDevice.size}</span>
+              </header>
+              <div class="preview-options">
+                ${previewDevices
+                  .map(
+                    (device) => `
+                      <button class="${device.key === activeDevice.key ? 'active' : ''}" data-preview-device="${device.key}">
+                        <strong>${device.label}</strong>
+                        <span>${device.size}</span>
+                      </button>
+                    `
+                  )
+                  .join('')}
+              </div>
+            </div>`
+          : ''
+      }
     </section>
   `;
 }
@@ -138,12 +148,10 @@ function bindPreviewResize() {
 
 function updatePreviewScale() {
   const frame = document.querySelector('.device-frame');
-  const toolbar = document.querySelector('.preview-toolbar');
-  if (!frame || !toolbar) return;
+  if (!frame) return;
   const device = currentPreviewDevice();
-  const toolbarBox = toolbar.getBoundingClientRect();
   const horizontalSpace = Math.max(280, window.innerWidth - 32);
-  const verticalSpace = Math.max(360, window.innerHeight - toolbarBox.height - 48);
+  const verticalSpace = Math.max(360, window.innerHeight - 32);
   const scale = Math.min(1, horizontalSpace / device.width, verticalSpace / device.height);
   frame.style.setProperty('--preview-scale', String(Math.max(0.38, Math.round(scale * 1000) / 1000)));
 }
@@ -771,6 +779,7 @@ function bindEvents() {
 
 function handleAction(action) {
   if (action === 'toggle-add-sheet') setState({ addSheetOpen: !state.addSheetOpen, historySheetOpen: false, message: '' });
+  if (action === 'toggle-preview-tools') setState({ previewToolsOpen: !state.previewToolsOpen });
   if (action === 'open-history') setState({ historySheetOpen: true, addSheetOpen: false, historyQuery: '', message: '' });
   if (action === 'close-history') setState({ historySheetOpen: false, historyQuery: '' });
   if (action === 'continue-create') setState({ tab: 'add', addSheetOpen: false, message: '' });

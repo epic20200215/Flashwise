@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flashwise-v9';
+const CACHE_NAME = 'flashwise-v10';
 const ASSETS = [
   './',
   './index.html',

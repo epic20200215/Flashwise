@@ -50,10 +50,10 @@ textarea {
 }
 
 .preview-workbench {
+  position: relative;
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 14px;
+  grid-template-rows: 1fr;
   padding: 16px;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.34) 1px, transparent 1px),
@@ -62,32 +62,64 @@ textarea {
   background-size: 28px 28px;
 }
 
-.preview-toolbar {
-  width: min(100%, 980px);
-  margin: 0 auto;
+.preview-tools {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 80;
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) auto;
-  align-items: center;
-  gap: 14px;
+  justify-items: end;
+  gap: 10px;
+}
+
+.gm-tool-button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 18px;
+  color: #073719;
+  background: var(--green);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+}
+
+.gm-tool-button span {
+  font-size: 14px;
+  font-weight: 1000;
+  letter-spacing: 0;
+}
+
+.gm-tool-button.active {
+  background: #fff;
+  color: var(--ink);
+}
+
+.gm-tool-panel {
+  width: min(348px, calc(100vw - 28px));
   padding: 12px;
   border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
   backdrop-filter: blur(18px);
 }
 
-.preview-toolbar strong,
-.preview-toolbar span {
+.gm-tool-panel header {
+  margin-bottom: 10px;
+}
+
+.gm-tool-panel strong,
+.gm-tool-panel span {
   display: block;
 }
 
-.preview-toolbar > div:first-child strong {
-  font-size: 20px;
+.gm-tool-panel header strong {
+  font-size: 19px;
   font-weight: 1000;
 }
 
-.preview-toolbar > div:first-child span {
+.gm-tool-panel header span {
   margin-top: 3px;
   color: #64748b;
   font-weight: 700;
@@ -1463,14 +1495,18 @@ textarea,
 
 @media (max-width: 700px) {
   .preview-workbench {
-    gap: 10px;
     padding: 10px;
   }
 
-  .preview-toolbar {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    border-radius: 20px;
+  .preview-tools {
+    top: 10px;
+    right: 10px;
+  }
+
+  .gm-tool-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
   }
 
   .preview-options {
